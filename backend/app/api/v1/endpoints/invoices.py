@@ -74,3 +74,24 @@ def get_invoice(invoice_id: str, user: CurrentUser = Depends(require_exporter)):
     if not res or not res.data:
         raise HTTPException(404, "Invoice not found")
     return res.data
+
+
+@router.post("/{invoice_id}/confirm", response_model=InvoiceOut)
+def confirm_invoice(invoice_id: str, user: CurrentUser = Depends(require_exporter)):
+    """Exporter confirms the indicative rate and locks the invoice."""
+    db = get_supabase()
+    
+    # Verify ownership
+    res = db.table("invoices").select("*").eq("id", invoice_id).eq("exporter_id", user.id).maybe_single().execute()
+    if not res or not res.data:
+        raise HTTPException(404, "Invoice not found")
+        
+    # Update to confirmed
+    updated = (
+        db.table("invoices")
+        .update({"exporter_confirmed": True})
+        .eq("id", invoice_id)
+        .execute()
+    )
+    
+    return updated.data[0]

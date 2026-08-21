@@ -6,7 +6,7 @@ import Card from "../../components/ui/Card";
 import Badge from "../../components/ui/Badge";
 import Skeleton from "../../components/ui/Skeleton";
 import Timeline from "../../components/ui/Timeline";
-import { fetchInvoice } from "../../lib/services";
+import { fetchInvoice, confirmInvoice } from "../../lib/services";
 import { INVOICE_STATUS_META, SETTLEMENT_STEPS } from "../../lib/constants";
 import { formatMoney, formatRate, formatDate, formatDateTime } from "../../lib/utils";
 import type { Invoice } from "../../types";
@@ -21,11 +21,23 @@ const statusToStepIndex: Record<Invoice["status"], number> = {
 export default function InvoiceDetail() {
   const { id } = useParams<{ id: string }>();
   const [invoice, setInvoice] = useState<Invoice | null | undefined>(undefined);
+  const [confirming, setConfirming] = useState(false);
 
   useEffect(() => {
     if (!id) return;
     fetchInvoice(id).then(setInvoice);
   }, [id]);
+
+  const handleConfirm = async () => {
+    if (!id) return;
+    setConfirming(true);
+    try {
+      const updated = await confirmInvoice(id);
+      setInvoice(updated);
+    } finally {
+      setConfirming(false);
+    }
+  };
 
   return (
     <DashboardShell>
@@ -71,7 +83,23 @@ export default function InvoiceDetail() {
                 ))}
               </div>
 
-              {invoice.pool_id && (
+              {!invoice.exporter_confirmed && invoice.status !== "settled" && invoice.status !== "locked" && (
+                <div className="mt-6 rounded-xl border border-accent/20 bg-accent-soft p-5 text-center">
+                  <h3 className="text-[14px] font-medium text-accent">Ready to lock at the indicative rate?</h3>
+                  <p className="mt-1 text-[13px] text-accent/80">
+                    Your invoice has been processed and priced by our AI agents. Confirm now to proceed to funding.
+                  </p>
+                  <button
+                    onClick={handleConfirm}
+                    disabled={confirming}
+                    className="mt-4 rounded-full bg-accent px-5 py-2 text-[13px] font-medium text-white transition-colors hover:bg-accent-hover disabled:opacity-50"
+                  >
+                    {confirming ? "Confirming..." : "Confirm & Lock"}
+                  </button>
+                </div>
+              )}
+
+              {invoice.pool_id && invoice.exporter_confirmed && (
                 <Link
                   to={`/app/pools/${invoice.pool_id}`}
                   className="mt-5 inline-block text-[13px] text-accent hover:underline"

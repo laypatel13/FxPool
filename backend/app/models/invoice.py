@@ -26,4 +26,5 @@ class InvoiceOut(BaseModel):
     risk_score: Optional[float] = None
     compliance_status: Optional[str] = None
     agent_recommended_pool_id: Optional[str] = None
+    exporter_confirmed: bool = False
     created_at: datetime

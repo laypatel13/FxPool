@@ -57,6 +57,8 @@ export default function AdminPoolDetail() {
     }
   };
 
+  const allConfirmed = pool?.invoices?.every((inv) => inv.exporter_confirmed) ?? true;
+
   return (
     <AdminShell>
       <Link to="/admin/pools" className="inline-flex items-center gap-1.5 text-[13px] text-ink-muted hover:text-ink">
@@ -78,9 +80,18 @@ export default function AdminPoolDetail() {
             <div className="flex items-center gap-3">
               <Badge tone={POOL_STATUS_META[pool.status].tone}>{POOL_STATUS_META[pool.status].label}</Badge>
               {pool.status === "suggested" && (
-                <Button size="sm" onClick={() => setConfirmAction("execute")}>
-                  Execute contract
-                </Button>
+                <div className="flex items-center gap-2">
+                  {!allConfirmed && (
+                    <span className="text-[12px] text-signal-warn">Awaiting exporter confirmation</span>
+                  )}
+                  <button
+                    onClick={() => setConfirmAction("execute")}
+                    disabled={!allConfirmed}
+                    className="rounded-full bg-ink px-4 py-1.5 text-[13px] font-medium text-surface transition-colors hover:bg-ink-muted disabled:opacity-50"
+                  >
+                    Execute contract
+                  </button>
+                </div>
               )}
               {pool.status === "locked" && (
                 <Button size="sm" onClick={() => setConfirmAction("settle")}>
@@ -107,7 +118,14 @@ export default function AdminPoolDetail() {
                   {pool.invoices.map((inv) => (
                     <tr key={inv.id}>
                       <td className="tnum py-3 text-ink">{inv.id}</td>
-                      <td className="py-3 text-ink-muted">{inv.exporter_name ?? inv.exporter_id}</td>
+                      <td className="py-3 text-ink-muted">
+                        {inv.exporter_name ?? inv.exporter_id}
+                        {!inv.exporter_confirmed && (
+                          <span className="ml-2 inline-block rounded border border-signal-warn/30 bg-signal-warn/10 px-1 py-0.5 text-[10px] text-signal-warn uppercase tracking-wide">
+                            Unconfirmed
+                          </span>
+                        )}
+                      </td>
                       <td className="tnum py-3 text-ink">{formatMoney(inv.amount, inv.currency)}</td>
                       <td className="py-3">
                         {inv.risk_score != null ? (

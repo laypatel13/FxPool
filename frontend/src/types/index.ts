@@ -27,6 +27,7 @@ export interface Invoice {
   risk_score?: number | null;
   compliance_status?: string | null;
   agent_recommended_pool_id?: string | null;
+  exporter_confirmed?: boolean;
   created_at: string; // ISO datetime
 }
 

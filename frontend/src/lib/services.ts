@@ -43,6 +43,11 @@ export async function fetchInvoice(id: string): Promise<Invoice | undefined> {
   return data;
 }
 
+export async function confirmInvoice(id: string): Promise<Invoice> {
+  const { data } = await api.post<Invoice>(`/invoices/${id}/confirm`);
+  return data;
+}
+
 export async function createInvoice(body: {
   amount: number;
   currency: string;
