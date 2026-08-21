@@ -13,6 +13,20 @@ import { POOL_STATUS_META } from "../../lib/constants";
 import { formatMoney, formatDate, formatDateTime } from "../../lib/utils";
 import type { PoolDetail } from "../../types";
 
+const getComplianceTone = (status?: string | null) => {
+  if (status === "approved") return "up";
+  if (status === "flagged") return "warn";
+  if (status === "rejected") return "down";
+  return "muted";
+};
+
+const getRiskTone = (score?: number | null) => {
+  if (score === null || score === undefined) return "muted";
+  if (score < 40) return "up";
+  if (score < 75) return "warn";
+  return "down";
+};
+
 export default function AdminPoolDetail() {
   const { id } = useParams<{ id: string }>();
   const [pool, setPool] = useState<PoolDetail | null>(null);
@@ -85,6 +99,8 @@ export default function AdminPoolDetail() {
                     <th className="py-2.5 font-normal">Invoice</th>
                     <th className="py-2.5 font-normal">Exporter</th>
                     <th className="py-2.5 font-normal">Amount</th>
+                    <th className="py-2.5 font-normal">Risk</th>
+                    <th className="py-2.5 font-normal">Compliance</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-line">
@@ -93,6 +109,20 @@ export default function AdminPoolDetail() {
                       <td className="tnum py-3 text-ink">{inv.id}</td>
                       <td className="py-3 text-ink-muted">{inv.exporter_name ?? inv.exporter_id}</td>
                       <td className="tnum py-3 text-ink">{formatMoney(inv.amount, inv.currency)}</td>
+                      <td className="py-3">
+                        {inv.risk_score != null ? (
+                          <Badge tone={getRiskTone(inv.risk_score)}>{inv.risk_score.toFixed(0)}</Badge>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
+                      <td className="py-3">
+                        {inv.compliance_status ? (
+                          <Badge tone={getComplianceTone(inv.compliance_status)}>{inv.compliance_status}</Badge>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -100,6 +130,38 @@ export default function AdminPoolDetail() {
             </Card>
 
             <div className="space-y-5">
+              <Card className="p-6">
+                <div className="flex items-center justify-between">
+                  <p className="text-[13.5px] font-medium text-ink">AI Assessment</p>
+                  <Badge tone="accent">BETA</Badge>
+                </div>
+                <div className="mt-4 space-y-4 text-[13px]">
+                  <div>
+                    <div className="flex items-center justify-between text-ink-muted mb-1.5">
+                      <span>Pool Risk Score</span>
+                      <span className="font-medium text-ink">{pool.risk_score != null ? pool.risk_score.toFixed(0) : "—"}</span>
+                    </div>
+                    {pool.risk_score != null && (
+                      <ProgressBar
+                        value={pool.risk_score}
+                        tone={getRiskTone(pool.risk_score) as "up" | "warn" | "down" | "accent"}
+                        className="mt-1"
+                      />
+                    )}
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between text-ink-muted">
+                      <span>Compliance Status</span>
+                      {pool.compliance_status ? (
+                        <Badge tone={getComplianceTone(pool.compliance_status)}>{pool.compliance_status}</Badge>
+                      ) : (
+                        <span className="text-ink">—</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </Card>
+
               <Card className="p-6">
                 <p className="text-[13.5px] font-medium text-ink">Fill progress</p>
                 <p className="tnum mt-3 text-[22px] text-ink">{formatMoney(pool.total_amount, pool.currency)}</p>
