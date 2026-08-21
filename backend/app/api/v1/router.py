@@ -5,6 +5,7 @@ from app.api.v1.endpoints import (
     invoices,
     pools,
     bank_pools,
+    documents,
 )
 from app.api.v1.endpoints.admin import (
     pools as admin_pools,
@@ -22,6 +23,7 @@ api_router.include_router(rates.router)
 api_router.include_router(invoices.router)
 api_router.include_router(pools.router)
 api_router.include_router(bank_pools.router)
+api_router.include_router(documents.router, prefix="/documents", tags=["documents"])
 
 api_router.include_router(admin_pools.router)
 api_router.include_router(admin_invoices.router)
