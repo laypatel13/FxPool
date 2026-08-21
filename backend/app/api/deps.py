@@ -53,8 +53,16 @@ def get_current_user(
 
     db = get_supabase()
     res = db.table("profiles").select("role").eq("id", user_id).maybe_single().execute()
-    if not res or not res.data:
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "Profile not found — call /auth/profile first")
+    
+    if res and res.data:
+        return CurrentUser(id=user_id, email=email, role=res.data["role"])
+        
+    # Check if they are a bank user
+    bank_res = db.table("bank_users").select("id").eq("id", user_id).maybe_single().execute()
+    if bank_res and bank_res.data:
+        return CurrentUser(id=user_id, email=email, role="bank")
+
+    raise HTTPException(status.HTTP_403_FORBIDDEN, "Profile not found — call /auth/profile first")
 
     return CurrentUser(id=user_id, email=email, role=res.data["role"])
 
@@ -68,4 +76,9 @@ def require_admin(user: CurrentUser = Depends(get_current_user)) -> CurrentUser:
 def require_exporter(user: CurrentUser = Depends(get_current_user)) -> CurrentUser:
     if user.role != "exporter":
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Exporter access required")
+    return user
+
+def require_bank(user: CurrentUser = Depends(get_current_user)) -> CurrentUser:
+    if user.role != "bank":
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Bank access required")
     return user

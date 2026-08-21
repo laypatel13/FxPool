@@ -8,6 +8,9 @@ import type {
   PoolDetail,
   PoolSettings,
   Profile,
+  Bank,
+  BankCapacity,
+  BankQuote,
 } from "../types";
 
 // ---- Profile — wired to /auth ---------------------------------------------
@@ -132,5 +135,44 @@ export async function fetchAdminOverviewStats(): Promise<AdminOverviewStats> {
 
 export async function fetchAdminAnalytics(): Promise<AdminAnalyticsData> {
   const { data } = await api.get<AdminAnalyticsData>("/admin/analytics");
+  return data;
+}
+
+// ---- Admin Banks -----------------------------------------------------------
+
+export async function fetchBanks(): Promise<Bank[]> {
+  const { data } = await api.get<Bank[]>("/admin/banks");
+  return data;
+}
+
+export async function createBank(body: Partial<Bank>): Promise<Bank> {
+  const { data } = await api.post<Bank>("/admin/banks", body);
+  return data;
+}
+
+export async function setBankCapacity(bankId: string, capacity: Partial<BankCapacity>): Promise<BankCapacity> {
+  const { data } = await api.put<BankCapacity>(`/admin/banks/${bankId}/capacity`, capacity);
+  return data;
+}
+
+// ---- Bank Portal -----------------------------------------------------------
+
+export async function fetchBankPools(): Promise<Pool[]> {
+  const { data } = await api.get<Pool[]>("/bank/pools");
+  return data;
+}
+
+export async function fetchBankPoolDetail(poolId: string): Promise<PoolDetail> {
+  const { data } = await api.get<PoolDetail>(`/bank/pools/${poolId}`);
+  return data;
+}
+
+export async function quoteBankPool(poolId: string, rate: number): Promise<BankQuote> {
+  const { data } = await api.post<BankQuote>(`/bank/pools/${poolId}/quote`, null, { params: { rate } });
+  return data;
+}
+
+export async function confirmBankSettlement(poolId: string): Promise<Pool> {
+  const { data } = await api.post<Pool>(`/bank/pools/${poolId}/confirm-settlement`);
   return data;
 }

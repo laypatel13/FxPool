@@ -31,6 +31,11 @@ import AdminPools from "./pages/admin/AdminPools";
 import AdminPoolDetail from "./pages/admin/AdminPoolDetail";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminSettings from "./pages/admin/AdminSettings";
+import AdminBanks from "./pages/admin/AdminBanks";
+
+// Bank
+import BankPools from "./pages/bank/BankPools";
+import BankPoolDetail from "./pages/bank/BankPoolDetail";
 
 export default function App() {
   return (
@@ -172,6 +177,32 @@ export default function App() {
             element={
               <RequireRole role="admin">
                 <AdminSettings />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="/admin/banks"
+            element={
+              <RequireRole role="admin">
+                <AdminBanks />
+              </RequireRole>
+            }
+          />
+          
+          {/* Bank console */}
+          <Route
+            path="/bank/pools"
+            element={
+              <RequireRole role="bank">
+                <BankPools />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="/bank/pools/:id"
+            element={
+              <RequireRole role="bank">
+                <BankPoolDetail />
               </RequireRole>
             }
           />

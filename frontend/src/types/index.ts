@@ -1,7 +1,7 @@
 // Mirrors app/models/*.py in fxpool-backend so the frontend and API
 // never drift silently out of sync.
 
-export type Role = "exporter" | "admin";
+export type Role = "exporter" | "admin" | "bank";
 
 export interface Profile {
   id: string;
@@ -120,4 +120,36 @@ export interface ExporterSummary {
   company_name?: string | null;
   invoice_count: number;
   total_volume: number;
+}
+
+export interface Bank {
+  id: string;
+  name: string;
+  code: string;
+  status: "active" | "inactive" | "suspended";
+  supported_currencies: string[];
+  api_endpoint?: string | null;
+  contact_email?: string | null;
+  contact_name?: string | null;
+  created_at: string;
+}
+
+export interface BankCapacity {
+  id: string;
+  bank_id: string;
+  currency: string;
+  max_exposure: number;
+  current_exposure: number;
+  min_pool_amount?: number | null;
+  updated_at: string;
+}
+
+export interface BankQuote {
+  id: string;
+  pool_id: string;
+  bank_id: string;
+  quoted_rate: number;
+  source: string;
+  valid_until?: string | null;
+  created_at: string;
 }

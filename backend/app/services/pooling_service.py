@@ -23,9 +23,9 @@ def get_pool_settings(currency: str) -> dict:
     return {"bucket_width_days": 7, "min_pool_amount": 5000}
 
 
-def assign_invoice_to_pool(invoice: dict) -> dict:
+def assign_invoice_to_pool(invoice: dict, bank_id: str) -> dict:
     """Core pooling algorithm — runs right after an invoice is inserted.
-    1. Find an open ('collecting') pool of the same currency whose bucket
+    1. Find an open ('collecting') pool of the same bank, currency whose bucket
        window contains this invoice's due_date.
     2. If none exists, open a new pool sized by the current N.
     3. Attach the invoice, roll up total_amount, and flip the pool to
@@ -34,13 +34,19 @@ def assign_invoice_to_pool(invoice: dict) -> dict:
     db = get_supabase()
     currency = invoice["currency"]
     due_date = invoice["due_date"]
+    
+    # Check for bank-specific min_pool_amount override
+    cap_res = db.table("bank_capacity").select("min_pool_amount").eq("bank_id", bank_id).eq("currency", currency).execute()
+    cap_min = cap_res.data[0].get("min_pool_amount") if cap_res.data else None
+
     settings = get_pool_settings(currency)
     n = settings["bucket_width_days"]
-    min_amount = settings.get("min_pool_amount") or 0
+    min_amount = cap_min if cap_min is not None else (settings.get("min_pool_amount") or 0)
 
     pool_res = (
         db.table("pools")
         .select("*")
+        .eq("bank_id", bank_id)
         .eq("currency", currency)
         .eq("status", "collecting")
         .lte("bucket_start_date", due_date)
@@ -59,6 +65,7 @@ def assign_invoice_to_pool(invoice: dict) -> dict:
             db.table("pools")
             .insert(
                 {
+                    "bank_id": bank_id,
                     "currency": currency,
                     "bucket_start_date": bucket_start,
                     "bucket_end_date": bucket_end,
@@ -106,11 +113,14 @@ def assign_to_existing_pool(invoice: dict, pool_id: str) -> dict:
 
     # 2. Validate that the invoice's due date fits the pool's bucket
     if not (pool["bucket_start_date"] <= invoice["due_date"] <= pool["bucket_end_date"]):
-        # Fall back to standard deterministic assignment
-        return assign_invoice_to_pool(invoice)
+        # Fall back to standard deterministic assignment, preserving the agent's bank choice
+        return assign_invoice_to_pool(invoice, pool["bank_id"])
+
+    cap_res = db.table("bank_capacity").select("min_pool_amount").eq("bank_id", pool["bank_id"]).eq("currency", invoice["currency"]).execute()
+    cap_min = cap_res.data[0].get("min_pool_amount") if cap_res.data else None
 
     settings = get_pool_settings(invoice["currency"])
-    min_amount = settings.get("min_pool_amount") or 0
+    min_amount = cap_min if cap_min is not None else (settings.get("min_pool_amount") or 0)
 
     new_total = float(pool["total_amount"]) + float(invoice["amount"])
     new_status = "suggested" if new_total >= min_amount and pool["status"] == "collecting" else pool["status"]

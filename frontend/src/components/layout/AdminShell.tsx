@@ -10,6 +10,7 @@ import {
   LogOut,
   Menu,
   X,
+  Building2,
 } from "lucide-react";
 import Logo from "../ui/Logo";
 import { cn, initials } from "../../lib/utils";
@@ -20,6 +21,7 @@ const nav = [
   { to: "/admin/users", label: "Exporters", icon: Users },
   { to: "/admin/invoices", label: "Invoice review", icon: FileSearch },
   { to: "/admin/pools", label: "Pools & contracts", icon: Layers },
+  { to: "/admin/banks", label: "Banking Partners", icon: Building2 },
   { to: "/admin/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/admin/settings", label: "Pool settings", icon: Settings },
 ];

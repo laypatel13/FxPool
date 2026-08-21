@@ -18,9 +18,19 @@ def create_profile(body: ProfileCreate, user: VerifiedUser = Depends(get_verifie
     return res.data[0]
 
 
-@router.get("/me", response_model=ProfileOut)
+@router.get("/me")
 def get_me(user: CurrentUser = Depends(get_current_user)):
     db = get_supabase()
+    
+    # Check bank users
+    bank_user = db.table("bank_users").select("*").eq("id", user.id).maybe_single().execute()
+    if bank_user and bank_user.data:
+        return {
+            "id": user.id,
+            "role": "bank",
+            "full_name": "Bank User"
+        }
+        
     res = db.table("profiles").select("*").eq("id", user.id).maybe_single().execute()
     if not res or not res.data:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Profile not found")

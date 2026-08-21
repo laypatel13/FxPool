@@ -101,10 +101,64 @@ def run_compliance_agent(invoice: dict) -> dict:
     return output
 
 
-def run_pooling_agent(invoice: dict) -> dict:
-    # 1. Fetch candidate pools (status='collecting', same currency)
+def run_bank_routing_agent(invoice: dict) -> dict:
     db = get_supabase()
-    res = db.table("pools").select("*").eq("status", "collecting").eq("currency", invoice["currency"]).execute()
+    
+    # 1. Fetch eligible banks (status='active', currency in supported_currencies)
+    banks_res = db.table("banks").select("*").eq("status", "active").contains("supported_currencies", [invoice["currency"]]).execute()
+    banks = banks_res.data
+    
+    if not banks:
+        # Fallback to no bank if none configured
+        return {"bank_id": None, "reasoning": "No eligible banks found", "confidence": 0, "is_fallback": True}
+
+    # 2. Fetch capacity for these banks
+    bank_ids = [b["id"] for b in banks]
+    capacity_res = db.table("bank_capacity").select("*").in_("bank_id", bank_ids).eq("currency", invoice["currency"]).execute()
+    capacities = capacity_res.data
+
+    input_data = {
+        "invoice": invoice,
+        "banks": banks,
+        "capacities": capacities
+    }
+    
+    system = "You are the Bank Routing Agent. Choose a bank from the provided list based on available headroom (max_exposure - current_exposure). Return ONLY valid JSON with keys: 'bank_id' (string), 'reasoning' (string), and 'confidence' (number 0-100)."
+    output = _invoke_bedrock(system, json.dumps(input_data))
+    
+    if output.get("is_fallback") or not output.get("bank_id") or not any(b["id"] == output["bank_id"] for b in banks):
+        # Deterministic fallback: bank with most headroom
+        best_bank_id = banks[0]["id"]
+        max_headroom = -99999999
+        for cap in capacities:
+            headroom = float(cap["max_exposure"]) - float(cap["current_exposure"])
+            if headroom > max_headroom:
+                max_headroom = headroom
+                best_bank_id = cap["bank_id"]
+        
+        output = {
+            "bank_id": best_bank_id,
+            "reasoning": "Fallback routing to bank with maximum capacity headroom",
+            "confidence": 0,
+            "is_fallback": True
+        }
+
+    _log_agent_run(
+        invoice_id=invoice.get("id"),
+        pool_id=None,
+        agent_name="bank_routing",
+        input_data=input_data,
+        output_data=output,
+        recommendation=output.get("bank_id"),
+        confidence=output.get("confidence")
+    )
+    return output
+
+
+def run_pooling_agent(invoice: dict, bank_id: str) -> dict:
+    # 1. Fetch candidate pools (status='collecting', same currency, same bank)
+    db = get_supabase()
+    res = db.table("pools").select("*").eq("status", "collecting").eq("currency", invoice["currency"]).eq("bank_id", bank_id).execute()
     
     # Filter candidate pools to ensure the invoice due date is within the pool's bucket
     due_date = invoice["due_date"]
@@ -135,7 +189,7 @@ def run_pooling_agent(invoice: dict) -> dict:
     
     if not assigned_pool:
         # Fallback or "new" action: use the standard logic which creates a new pool if no exact match
-        assigned_pool = assign_invoice_to_pool(invoice)
+        assigned_pool = assign_invoice_to_pool(invoice, bank_id)
 
     _log_agent_run(
         invoice_id=invoice.get("id"),
@@ -169,6 +223,24 @@ def run_risk_agent(invoice: dict, pool: dict) -> dict:
     return output
 
 
+def run_execution_agent(pool: dict):
+    from app.services.rate_service import compute_indicative_forward_rate
+    from app.services.settlement_service import execute_pool
+    from datetime import date
+    
+    db = get_supabase()
+    invoices = db.table("invoices").select("exporter_confirmed, compliance_status").eq("pool_id", pool["id"]).execute().data or []
+    
+    # Check safety valve conditions
+    if any(inv.get("compliance_status") == "rejected" for inv in invoices) or any(not inv.get("exporter_confirmed") for inv in invoices):
+        logger.info(f"Execution Agent aborted for pool {pool['id']} due to failed compliance/confirmation checks.")
+        return None
+        
+    mid_date = date.fromisoformat(pool["bucket_end_date"])
+    locked_rate = compute_indicative_forward_rate(pool["currency"], mid_date)
+    return execute_pool(pool["id"], locked_rate)
+
+
 def run_agent_pipeline(invoice: dict) -> dict:
     """Orchestrator: Runs the agent fan-out pipeline on a new invoice."""
     
@@ -182,10 +254,14 @@ def run_agent_pipeline(invoice: dict) -> dict:
         
     compliance_status = compliance_assessment.get("compliance_status", "flagged")
 
-    # 2. Pooling Agent
-    assigned_pool = run_pooling_agent(invoice)
+    # 2. Bank Routing Agent
+    bank_routing = run_bank_routing_agent(invoice)
+    bank_id = bank_routing.get("bank_id")
 
-    # 3. Risk Agent (on the pool level)
+    # 3. Pooling Agent
+    assigned_pool = run_pooling_agent(invoice, bank_id)
+
+    # 4. Risk Agent (on the pool level)
     risk_assessment = run_risk_agent(invoice, assigned_pool)
     risk_score = risk_assessment.get("risk_score")
 

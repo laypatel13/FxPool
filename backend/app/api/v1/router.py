@@ -10,6 +10,8 @@ from app.api.v1.endpoints import (
     admin_overview,
     admin_analytics,
     admin_exporters,
+    admin_banks,
+    bank_pools,
 )
 
 api_router = APIRouter()
@@ -23,3 +25,5 @@ api_router.include_router(admin_settings.router)
 api_router.include_router(admin_overview.router)
 api_router.include_router(admin_analytics.router)
 api_router.include_router(admin_exporters.router)
+api_router.include_router(admin_banks.router)
+api_router.include_router(bank_pools.router)

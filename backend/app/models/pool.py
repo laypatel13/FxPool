@@ -18,6 +18,9 @@ class PoolOut(BaseModel):
     settled_at: Optional[datetime] = None
     risk_score: Optional[float] = None
     compliance_status: Optional[str] = None
+    bank_id: Optional[str] = None
+    routing_confidence: Optional[float] = None
+    routing_reasoning: Optional[str] = None
     created_at: datetime
 
 

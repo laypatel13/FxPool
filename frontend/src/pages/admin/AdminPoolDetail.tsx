@@ -177,6 +177,22 @@ export default function AdminPoolDetail() {
                       )}
                     </div>
                   </div>
+                  {pool.bank_id && (
+                    <div className="mt-4 pt-4 border-t border-line space-y-3">
+                      <div className="flex items-center justify-between text-ink-muted">
+                        <span>Assigned Bank ID</span>
+                        <span className="text-ink font-medium">{pool.bank_id.split('-')[0]}...</span>
+                      </div>
+                      <div className="flex items-center justify-between text-ink-muted">
+                        <span>Routing Confidence</span>
+                        <span className="text-ink font-medium">{pool.routing_confidence ? `${pool.routing_confidence}%` : "—"}</span>
+                      </div>
+                      <div className="text-ink-muted flex flex-col gap-1">
+                        <span>Routing Reasoning</span>
+                        <span className="text-[12px] text-ink">{pool.routing_reasoning || "—"}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </Card>
 
