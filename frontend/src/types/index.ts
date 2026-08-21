@@ -12,6 +12,36 @@ export interface Profile {
 
 export type InvoiceStatus = "pending_pool" | "pooled" | "locked" | "settled";
 
+export type DocumentEntityType = "profile" | "invoice";
+
+export type DocumentCategory = 
+  | "business_kyc"
+  | "individual_kyc"
+  | "commercial"
+  | "shipment"
+  | "service_export"
+  | "payment_proof"
+  | "hedging_proof"
+  | "other";
+
+export type DocumentStatus = "pending" | "verified" | "rejected";
+
+export interface Document {
+  id: string;
+  uploader_id: string;
+  entity_type: DocumentEntityType;
+  entity_id: string;
+  category: DocumentCategory;
+  document_name: string;
+  file_url: string;
+  status: DocumentStatus;
+  verified_at?: string;
+  verified_by?: string;
+  rejection_reason?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Invoice {
   id: string;
   exporter_id: string;

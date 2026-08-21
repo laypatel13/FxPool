@@ -1,12 +1,14 @@
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import DashboardShell from "../components/DashboardShell";
 import Card from "../../../components/ui/Card";
 import Input from "../../../components/ui/Input";
 import Button from "../../../components/ui/Button";
 import Badge from "../../../components/ui/Badge";
+import UploadDocumentModal from "../components/UploadDocumentModal";
 import { useAuth } from "../../../hooks/useAuth";
-import { updateMyProfile } from "../../../lib/services";
+import { updateMyProfile, documentApi } from "../../../lib/services";
 import { initials } from "../../../lib/utils";
+import type { Document } from "../../../types";
 
 export default function Profile() {
   const { profile } = useAuth();
@@ -15,6 +17,22 @@ export default function Profile() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
+
+  const fetchDocs = async () => {
+    if (!profile) return;
+    try {
+      const docs = await documentApi.getDocumentsByEntity("profile", profile.id);
+      setDocuments(docs);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  useEffect(() => {
+    fetchDocs();
+  }, [profile]);
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -71,7 +89,63 @@ export default function Profile() {
             </div>
           </form>
         </Card>
+
+        {/* KYC Documents Section */}
+        <Card className="p-6 lg:col-span-3">
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <p className="text-[14.5px] font-medium text-ink">KYC & Compliance Documents</p>
+              <p className="mt-1 text-[13px] text-ink-muted">Upload your business registration and identity documents.</p>
+            </div>
+            <Button size="sm" onClick={() => setUploadModalOpen(true)}>
+              Upload Document
+            </Button>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-[13.5px]">
+              <thead>
+                <tr className="border-b border-line-strong text-ink-muted">
+                  <th className="pb-3 pr-4 font-medium">Document Name</th>
+                  <th className="pb-3 pr-4 font-medium">Category</th>
+                  <th className="pb-3 pr-4 font-medium">Status</th>
+                  <th className="pb-3 font-medium">Uploaded</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-line">
+                {documents.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="py-6 text-center text-ink-muted">
+                      No documents uploaded yet.
+                    </td>
+                  </tr>
+                ) : (
+                  documents.map((doc) => (
+                    <tr key={doc.id} className="text-ink">
+                      <td className="py-3 pr-4">{doc.document_name}</td>
+                      <td className="py-3 pr-4 capitalize">{doc.category.replace('_', ' ')}</td>
+                      <td className="py-3 pr-4">
+                        <Badge tone={doc.status === 'verified' ? 'up' : doc.status === 'rejected' ? 'down' : 'warn'}>
+                          {doc.status}
+                        </Badge>
+                      </td>
+                      <td className="py-3 text-ink-muted">{new Date(doc.created_at).toLocaleDateString()}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </Card>
       </div>
+
+      <UploadDocumentModal 
+        open={uploadModalOpen} 
+        onClose={() => setUploadModalOpen(false)} 
+        onUploaded={fetchDocs} 
+        entityType="profile" 
+        entityId={profile?.id || ""} 
+      />
     </DashboardShell>
   );
 }

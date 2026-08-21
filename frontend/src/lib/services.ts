@@ -13,6 +13,7 @@ import type {
   BankCapacity,
   BankQuote,
   Role,
+  Document,
 } from "../types";
 
 // ---- Profile — wired to /auth ---------------------------------------------
@@ -62,6 +63,42 @@ export async function createInvoice(body: {
   const { data } = await api.post<Invoice>("/invoices", body);
   return data;
 }
+
+export const documentApi = {
+  getDocumentsByEntity: async (entityType: "profile" | "invoice", entityId: string): Promise<Document[]> => {
+    const res = await api.get(`/documents/entity/${entityType}/${entityId}`);
+    return res.data;
+  },
+
+  uploadDocument: async (
+    entityType: "profile" | "invoice",
+    entityId: string,
+    category: string,
+    documentName: string,
+    fileUrl: string
+  ): Promise<Document> => {
+    const res = await api.post("/documents/", {
+      entity_type: entityType,
+      entity_id: entityId,
+      category,
+      document_name: documentName,
+      file_url: fileUrl,
+    });
+    return res.data;
+  },
+
+  verifyDocument: async (
+    documentId: string,
+    status: "verified" | "rejected",
+    rejectionReason?: string
+  ): Promise<Document> => {
+    const res = await api.patch(`/documents/${documentId}/verify`, {
+      status,
+      rejection_reason: rejectionReason,
+    });
+    return res.data;
+  },
+};
 
 export async function fetchIndicativeRate(currency: string, dueDate: string) {
   const { data } = await api.get("/rate/indicative", { params: { currency, due_date: dueDate } });

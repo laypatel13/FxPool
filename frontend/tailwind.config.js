@@ -5,23 +5,23 @@ export default {
     extend: {
       colors: {
         base: {
-          DEFAULT: "#050B14",
-          raised: "#080F1A",
+          DEFAULT: "#23262b",
+          raised: "#23262b", // In neumorphism, raised surfaces share the base background
         },
         surface: {
-          1: "#111827",
-          2: "#1A2234",
-          3: "#212B40",
+          1: "#23262b",
+          2: "#23262b",
+          3: "#23262b",
         },
         line: {
-          DEFAULT: "rgba(248,250,252,0.08)",
-          strong: "rgba(248,250,252,0.14)",
-          accent: "rgba(0,209,199,0.35)",
+          DEFAULT: "rgba(255,255,255,0.03)",
+          strong: "rgba(255,255,255,0.08)",
+          accent: "rgba(255,255,255,0.15)", // No more cyan
         },
         accent: {
-          DEFAULT: "#00D1C7",
-          dim: "#0BA69F",
-          soft: "rgba(0,209,199,0.12)",
+          DEFAULT: "#ffffff", // Pure white for accent (monochrome)
+          dim: "#cccccc",
+          soft: "rgba(255,255,255,0.1)",
         },
         ink: {
           DEFAULT: "#F8FAFC",
@@ -29,9 +29,9 @@ export default {
           faint: "#5B6B84",
         },
         signal: {
-          up: "#3DD9A4",
-          down: "#F0765A",
-          warn: "#E8B96A",
+          up: "#A3A3A3", // Replaced green with gray for monochrome
+          down: "#737373", // Replaced red with gray for monochrome
+          warn: "#D4D4D4", // Replaced yellow with gray for monochrome
         },
       },
       fontFamily: {
@@ -45,15 +45,12 @@ export default {
         "3xl": "32px",
       },
       boxShadow: {
-        card: "0 1px 0 rgba(248,250,252,0.04) inset, 0 24px 48px -24px rgba(0,0,0,0.65)",
-        raised: "0 1px 0 rgba(248,250,252,0.06) inset, 0 32px 64px -28px rgba(0,0,0,0.75)",
-        glow: "0 0 0 1px rgba(0,209,199,0.4), 0 0 32px rgba(0,209,199,0.12)",
-      },
-      backgroundImage: {
-        dotgrid: "radial-gradient(rgba(248,250,252,0.06) 1px, transparent 1px)",
-      },
-      backgroundSize: {
-        dotgrid: "22px 22px",
+        neu: "8px 8px 16px #1a1c20, -8px -8px 16px #2c3036",
+        "neu-sm": "4px 4px 8px #1a1c20, -4px -4px 8px #2c3036",
+        "neu-inset": "inset 5px 5px 10px #1a1c20, inset -5px -5px 10px #2c3036",
+        "neu-active": "inset 3px 3px 6px #1a1c20, inset -3px -3px 6px #2c3036",
+        "neu-lg": "15px 15px 30px #15171a, -15px -15px 30px #31353c",
+        card: "8px 8px 16px #1a1c20, -8px -8px 16px #2c3036", // alias for neu
       },
       transitionTimingFunction: {
         instrument: "cubic-bezier(0.22, 1, 0.36, 1)",

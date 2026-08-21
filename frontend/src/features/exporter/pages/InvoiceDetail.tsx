@@ -6,10 +6,11 @@ import Card from "../../../components/ui/Card";
 import Badge from "../../../components/ui/Badge";
 import Skeleton from "../../../components/ui/Skeleton";
 import Timeline from "../../../components/ui/Timeline";
-import { fetchInvoice, confirmInvoice } from "../../../lib/services";
+import UploadDocumentModal from "../components/UploadDocumentModal";
+import { fetchInvoice, confirmInvoice, documentApi } from "../../../lib/services";
 import { INVOICE_STATUS_META, SETTLEMENT_STEPS } from "../../../lib/constants";
 import { formatMoney, formatRate, formatDate, formatDateTime } from "../../../lib/utils";
-import type { Invoice } from "../../../types";
+import type { Invoice, Document } from "../../../types";
 
 const statusToStepIndex: Record<Invoice["status"], number> = {
   pending_pool: 1,
@@ -22,10 +23,23 @@ export default function InvoiceDetail() {
   const { id } = useParams<{ id: string }>();
   const [invoice, setInvoice] = useState<Invoice | null | undefined>(undefined);
   const [confirming, setConfirming] = useState(false);
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
+
+  const fetchDocs = async () => {
+    if (!id) return;
+    try {
+      const docs = await documentApi.getDocumentsByEntity("invoice", id);
+      setDocuments(docs);
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   useEffect(() => {
     if (!id) return;
     fetchInvoice(id).then(setInvoice);
+    fetchDocs();
   }, [id]);
 
   const handleConfirm = async () => {
@@ -143,9 +157,85 @@ export default function InvoiceDetail() {
                 />
               </div>
             </Card>
+
+            {/* Commercial Documents Section */}
+            <Card className="p-6 lg:col-span-3">
+              <div className="flex items-center justify-between mb-5">
+                <div>
+                  <p className="text-[14.5px] font-medium text-ink">Commercial & Hedging Documents</p>
+                  <p className="mt-1 text-[13px] text-ink-muted">Upload POs, Shipping Bills, and Payment proofs for this transaction.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setUploadModalOpen(true)}
+                  className="rounded-full bg-base px-4 py-2 text-[13px] font-medium text-white shadow-neu-sm transition-all hover:brightness-110 active:shadow-neu-active active:brightness-100"
+                >
+                  Upload Document
+                </button>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-[13.5px]">
+                  <thead>
+                    <tr className="border-b border-line-strong text-ink-muted">
+                      <th className="pb-3 pr-4 font-medium">Document Name</th>
+                      <th className="pb-3 pr-4 font-medium">Category</th>
+                      <th className="pb-3 pr-4 font-medium">Status</th>
+                      <th className="pb-3 font-medium">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-line">
+                    {documents.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="py-6 text-center text-ink-muted">
+                          No commercial documents uploaded yet.
+                        </td>
+                      </tr>
+                    ) : (
+                      documents.map((doc) => (
+                        <tr key={doc.id} className="text-ink">
+                          <td className="py-3 pr-4">{doc.document_name}</td>
+                          <td className="py-3 pr-4 capitalize">{doc.category.replace('_', ' ')}</td>
+                          <td className="py-3 pr-4">
+                            <Badge tone={doc.status === 'verified' ? 'up' : doc.status === 'rejected' ? 'down' : 'warn'}>
+                              {doc.status}
+                            </Badge>
+                          </td>
+                          <td className="py-3">
+                            <button
+                              type="button"
+                              className="text-[13px] text-white underline hover:no-underline"
+                              onClick={async () => {
+                                try {
+                                  const { getInvoiceDocumentUrl } = await import("../../../lib/services");
+                                  const url = await getInvoiceDocumentUrl(doc.file_url);
+                                  window.open(url, '_blank');
+                                } catch (err) {
+                                  alert("Could not load document.");
+                                }
+                              }}
+                            >
+                              View PDF
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
           </div>
         </>
       )}
+
+      <UploadDocumentModal 
+        open={uploadModalOpen} 
+        onClose={() => setUploadModalOpen(false)} 
+        onUploaded={fetchDocs} 
+        entityType="invoice" 
+        entityId={id || ""} 
+      />
     </DashboardShell>
   );
 }
