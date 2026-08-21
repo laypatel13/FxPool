@@ -3,7 +3,8 @@ import boto3
 import logging
 from concurrent.futures import ThreadPoolExecutor
 from app.core.supabase import get_supabase
-from app.services.pooling_service import get_pool_settings, assign_invoice_to_pool, create_pool
+from app.core.config import settings
+from app.services.pooling_service import get_pool_settings, assign_invoice_to_pool
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +15,12 @@ REGION = "us-east-1"
 def _invoke_bedrock(system_prompt: str, user_prompt: str) -> dict:
     """Invokes Claude Haiku via Bedrock Runtime and returns parsed JSON."""
     try:
-        client = boto3.client("bedrock-runtime", region_name=REGION)
+        client = boto3.client(
+            "bedrock-runtime",
+            region_name=settings.aws_region or REGION,
+            aws_access_key_id=settings.aws_access_key_id,
+            aws_secret_access_key=settings.aws_secret_access_key,
+        )
         body = {
             "anthropic_version": "bedrock-2023-05-31",
             "max_tokens": 512,
