@@ -38,11 +38,18 @@ def create_invoice(body: InvoiceCreate, user: CurrentUser = Depends(require_expo
         "agent_recommended_pool_id": pipeline_result["pool"]["id"] if pipeline_result["pool"] else None
     }).eq("id", invoice["id"]).execute()
     
-    # 3. Update the pool with the new risk_score
+    # 3. Update the pool with risk_score, compliance_status, and routing metadata
     if pipeline_result["pool"]:
-        db.table("pools").update({
-            "risk_score": pipeline_result["risk_score"]
-        }).eq("id", pipeline_result["pool"]["id"]).execute()
+        pool_update = {
+            "risk_score": pipeline_result["risk_score"],
+            "compliance_status": pipeline_result["compliance_status"],
+        }
+        # Persist bank routing agent metadata if available
+        if pipeline_result.get("routing_confidence") is not None:
+            pool_update["routing_confidence"] = pipeline_result["routing_confidence"]
+        if pipeline_result.get("routing_reasoning"):
+            pool_update["routing_reasoning"] = pipeline_result["routing_reasoning"]
+        db.table("pools").update(pool_update).eq("id", pipeline_result["pool"]["id"]).execute()
 
     final = db.table("invoices").select("*").eq("id", invoice["id"]).single().execute()
     return final.data

@@ -64,8 +64,6 @@ def get_current_user(
 
     raise HTTPException(status.HTTP_403_FORBIDDEN, "Profile not found — call /auth/profile first")
 
-    return CurrentUser(id=user_id, email=email, role=res.data["role"])
-
 
 def require_admin(user: CurrentUser = Depends(get_current_user)) -> CurrentUser:
     if user.role != "admin":

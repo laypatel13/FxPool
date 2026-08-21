@@ -1,6 +1,7 @@
 import json
 import boto3
 from botocore.config import Config
+from botocore.exceptions import ClientError
 import logging
 from concurrent.futures import ThreadPoolExecutor
 from app.core.supabase import get_supabase
@@ -9,40 +10,65 @@ from app.services.pooling_service import get_pool_settings, assign_invoice_to_po
 
 logger = logging.getLogger(__name__)
 
-# Update to best available model ID (Claude 3.5 Sonnet v2 via cross-region inference)
-MODEL_ID = "us.anthropic.claude-3-5-sonnet-20241022-v2:0"
+# Primary model (cross-region Claude 3.5 Sonnet v2)
+PRIMARY_MODEL_ID = "us.anthropic.claude-3-5-sonnet-20241022-v2:0"
+# Fallback model (Claude 3 Haiku — cheaper, more widely available)
+FALLBACK_MODEL_ID = "anthropic.claude-3-haiku-20240307-v1:0"
 REGION = "us-east-1"
 
 
+def _get_bedrock_client():
+    """Creates a Bedrock Runtime client with explicit credentials from settings."""
+    kwargs = {
+        "service_name": "bedrock-runtime",
+        "region_name": settings.aws_region or REGION,
+        "config": Config(connect_timeout=10, read_timeout=30, retries={"max_attempts": 2}),
+    }
+    # Explicitly pass credentials if available in settings
+    if settings.aws_access_key_id and settings.aws_secret_access_key:
+        kwargs["aws_access_key_id"] = settings.aws_access_key_id
+        kwargs["aws_secret_access_key"] = settings.aws_secret_access_key
+    return boto3.client(**kwargs)
+
+
 def _invoke_bedrock(system_prompt: str, user_prompt: str) -> dict:
-    """Invokes Claude Haiku via Bedrock Runtime and returns parsed JSON."""
-    try:
-        client = boto3.client(
-            "bedrock-runtime",
-            region_name=settings.aws_region or REGION,
-            config=Config(connect_timeout=5, read_timeout=15, retries={"max_attempts": 1}),
-        )
-        body = {
-            "anthropic_version": "bedrock-2023-05-31",
-            "max_tokens": 512,
-            "system": system_prompt,
-            "messages": [{"role": "user", "content": user_prompt}],
-            "temperature": 0.0,
-        }
-        response = client.invoke_model(modelId=MODEL_ID, body=json.dumps(body))
-        response_body = json.loads(response.get("body").read())
-        content = response_body.get("content", [])[0].get("text", "")
+    """Invokes Claude via Bedrock Runtime and returns parsed JSON.
+    Tries the primary model first; falls back to Haiku on access errors."""
+    client = _get_bedrock_client()
+    body = {
+        "anthropic_version": "bedrock-2023-05-31",
+        "max_tokens": 1024,
+        "system": system_prompt,
+        "messages": [{"role": "user", "content": user_prompt}],
+        "temperature": 0.0,
+    }
 
-        # Minimal JSON extraction to handle markdown wrappers
-        if "```json" in content:
-            content = content.split("```json")[1].split("```")[0].strip()
-        elif "```" in content:
-            content = content.split("```")[1].split("```")[0].strip()
+    # Try primary model, then fallback
+    for model_id in [PRIMARY_MODEL_ID, FALLBACK_MODEL_ID]:
+        try:
+            response = client.invoke_model(modelId=model_id, body=json.dumps(body))
+            response_body = json.loads(response.get("body").read())
+            content = response_body.get("content", [])[0].get("text", "")
 
-        return json.loads(content)
-    except Exception as e:
-        logger.error(f"Bedrock invocation failed: {e}")
-        return {"error": str(e), "is_fallback": True}
+            # Minimal JSON extraction to handle markdown wrappers
+            if "```json" in content:
+                content = content.split("```json")[1].split("```")[0].strip()
+            elif "```" in content:
+                content = content.split("```")[1].split("```")[0].strip()
+
+            return json.loads(content)
+        except ClientError as e:
+            error_code = e.response.get("Error", {}).get("Code", "")
+            if error_code in ("AccessDeniedException", "ValidationException") and model_id == PRIMARY_MODEL_ID:
+                logger.warning(f"Primary model {model_id} unavailable ({error_code}), falling back to {FALLBACK_MODEL_ID}")
+                continue
+            logger.error(f"Bedrock invocation failed for {model_id}: {e}")
+            return {"error": str(e), "is_fallback": True}
+        except Exception as e:
+            logger.error(f"Bedrock invocation failed for {model_id}: {e}")
+            return {"error": str(e), "is_fallback": True}
+
+    return {"error": "All models failed", "is_fallback": True}
 
 
 def _log_agent_run(invoice_id: str, pool_id: str, agent_name: str, input_data: dict, output_data: dict, recommendation: str, confidence: float):
@@ -278,5 +304,7 @@ def run_agent_pipeline(invoice: dict) -> dict:
     return {
         "compliance_status": compliance_status,
         "risk_score": risk_score,
-        "pool": assigned_pool
+        "pool": assigned_pool,
+        "routing_confidence": bank_routing.get("confidence"),
+        "routing_reasoning": bank_routing.get("reasoning"),
     }
