@@ -2,40 +2,40 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./hooks/useAuth";
 import { RequireRole } from "./components/RouteGuards";
 
-import Landing from "./pages/public/Landing";
-import HowItWorks from "./pages/public/HowItWorks";
-import Regulatory from "./pages/public/Regulatory";
-import Pricing from "./pages/public/Pricing";
-import Contact from "./pages/public/Contact";
+import Landing from "./features/public/pages/Landing";
+import HowItWorks from "./features/public/pages/HowItWorks";
+import Regulatory from "./features/public/pages/Regulatory";
+import Pricing from "./features/public/pages/Pricing";
+import Contact from "./features/public/pages/Contact";
 
-import Login from "./pages/auth/Login";
-import SignUp from "./pages/auth/SignUp";
-import VerifyEmail from "./pages/auth/VerifyEmail";
-import OtpVerification from "./pages/auth/OtpVerification";
-import ForgotPassword from "./pages/auth/ForgotPassword";
-import ResetPassword from "./pages/auth/ResetPassword";
+import Login from "./features/auth/pages/Login";
+import SignUp from "./features/auth/pages/SignUp";
+import VerifyEmail from "./features/auth/pages/VerifyEmail";
+import OtpVerification from "./features/auth/pages/OtpVerification";
+import ForgotPassword from "./features/auth/pages/ForgotPassword";
+import ResetPassword from "./features/auth/pages/ResetPassword";
 
-import Overview from "./pages/app/Overview";
-import Invoices from "./pages/app/Invoices";
-import InvoiceDetail from "./pages/app/InvoiceDetail";
-import Pools from "./pages/app/Pools";
-import HedgeDetail from "./pages/app/HedgeDetail";
-import Settlements from "./pages/app/Settlements";
-import History from "./pages/app/History";
-import Profile from "./pages/app/Profile";
+import Overview from "./features/exporter/pages/Overview";
+import Invoices from "./features/exporter/pages/Invoices";
+import InvoiceDetail from "./features/exporter/pages/InvoiceDetail";
+import Pools from "./features/exporter/pages/Pools";
+import HedgeDetail from "./features/exporter/pages/HedgeDetail";
+import Settlements from "./features/exporter/pages/Settlements";
+import History from "./features/exporter/pages/History";
+import Profile from "./features/exporter/pages/Profile";
 
-import AdminOverview from "./pages/admin/AdminOverview";
-import AdminUsers from "./pages/admin/AdminUsers";
-import AdminInvoices from "./pages/admin/AdminInvoices";
-import AdminPools from "./pages/admin/AdminPools";
-import AdminPoolDetail from "./pages/admin/AdminPoolDetail";
-import AdminAnalytics from "./pages/admin/AdminAnalytics";
-import AdminSettings from "./pages/admin/AdminSettings";
-import AdminBanks from "./pages/admin/AdminBanks";
+import AdminOverview from "./features/admin/pages/AdminOverview";
+import AdminUsers from "./features/admin/pages/AdminUsers";
+import AdminInvoices from "./features/admin/pages/AdminInvoices";
+import AdminPools from "./features/admin/pages/AdminPools";
+import AdminPoolDetail from "./features/admin/pages/AdminPoolDetail";
+import AdminAnalytics from "./features/admin/pages/AdminAnalytics";
+import AdminSettings from "./features/admin/pages/AdminSettings";
+import AdminBanks from "./features/admin/pages/AdminBanks";
 
 // Bank
-import BankPools from "./pages/bank/BankPools";
-import BankPoolDetail from "./pages/bank/BankPoolDetail";
+import BankPools from "./features/bank/pages/BankPools";
+import BankPoolDetail from "./features/bank/pages/BankPoolDetail";
 
 export default function App() {
   return (
