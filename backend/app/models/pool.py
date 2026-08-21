@@ -16,6 +16,8 @@ class PoolOut(BaseModel):
     locked_rate: Optional[float] = None
     executed_at: Optional[datetime] = None
     settled_at: Optional[datetime] = None
+    risk_score: Optional[float] = None
+    compliance_status: Optional[str] = None
     created_at: datetime
 
 

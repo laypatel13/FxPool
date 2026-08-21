@@ -8,6 +8,7 @@ ehthumbs.db
 Thumbs.db
 .env
 .env/
+MANUAL_SETUP.md
 
 # Node / JS
 node_modules/

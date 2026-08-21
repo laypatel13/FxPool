@@ -23,4 +23,7 @@ class InvoiceOut(BaseModel):
     pool_id: Optional[str] = None
     locked_rate: Optional[float] = None
     payout_amount: Optional[float] = None
+    risk_score: Optional[float] = None
+    compliance_status: Optional[str] = None
+    agent_recommended_pool_id: Optional[str] = None
     created_at: datetime

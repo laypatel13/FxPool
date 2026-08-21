@@ -24,6 +24,23 @@ export interface Invoice {
   pool_id?: string | null;
   locked_rate?: number | null;
   payout_amount?: number | null;
+  risk_score?: number | null;
+  compliance_status?: string | null;
+  agent_recommended_pool_id?: string | null;
+  created_at: string; // ISO datetime
+}
+
+export type AgentName = "invoice" | "risk" | "pooling" | "compliance" | "orchestrator";
+
+export interface AgentRun {
+  id: string;
+  invoice_id?: string | null;
+  pool_id?: string | null;
+  agent_name: AgentName;
+  input?: Record<string, any> | null;
+  output?: Record<string, any> | null;
+  recommendation?: string | null;
+  confidence?: number | null;
   created_at: string; // ISO datetime
 }
 
@@ -40,6 +57,8 @@ export interface Pool {
   locked_rate?: number | null;
   executed_at?: string | null;
   settled_at?: string | null;
+  risk_score?: number | null;
+  compliance_status?: string | null;
   created_at: string;
 }
 
