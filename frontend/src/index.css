@@ -1,0 +1,111 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+* {
+  border-color: theme("colors.line.DEFAULT");
+}
+
+html,
+body {
+  background-color: #050b14;
+}
+
+body {
+  @apply bg-base text-ink font-sans antialiased;
+  font-feature-settings: "tnum" 1, "cv11" 1;
+}
+
+/* Respect reduced-motion preference throughout the app */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Visible keyboard focus everywhere, independent of mouse hover states */
+:focus-visible {
+  outline: 2px solid #00d1c7;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Thin custom scrollbar to match the terminal-adjacent aesthetic */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #1a2234;
+  border-radius: 8px;
+  border: 2px solid #050b14;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #212b40;
+}
+
+/* Tabular figures for anything numeric / ledger-like */
+.tnum {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-feature-settings: "tnum" 1;
+  letter-spacing: -0.01em;
+}
+
+/* Ambient dot-grid field used behind hero / section backgrounds instead of gradients */
+.field-dotgrid {
+  background-image: radial-gradient(rgba(248, 250, 252, 0.07) 1px, transparent 1px);
+  background-size: 24px 24px;
+  background-position: -11px -11px;
+}
+
+/* Hairline top-illuminated border — the "hedge card" edge treatment */
+.edge-illuminated {
+  position: relative;
+}
+.edge-illuminated::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    160deg,
+    rgba(248, 250, 252, 0.16),
+    rgba(248, 250, 252, 0.02) 40%,
+    rgba(248, 250, 252, 0) 70%
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Signature element: instrument corner bracket, used on ledger / contract cards
+   to read like a trading-terminal instrument tag rather than a generic card */
+.instrument-corner {
+  position: relative;
+}
+.instrument-corner::after {
+  content: "";
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 14px;
+  height: 14px;
+  border-top: 1px solid rgba(0, 209, 199, 0.55);
+  border-right: 1px solid rgba(0, 209, 199, 0.55);
+  opacity: 0.8;
+  pointer-events: none;
+}
