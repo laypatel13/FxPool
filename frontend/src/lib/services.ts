@@ -11,6 +11,7 @@ import type {
   Bank,
   BankCapacity,
   BankQuote,
+  Role,
 } from "../types";
 
 // ---- Profile — wired to /auth ---------------------------------------------
@@ -21,7 +22,7 @@ export async function fetchMyProfile(): Promise<Profile> {
 }
 
 export async function createProfile(body: {
-  role: "exporter" | "admin";
+  role: Role;
   full_name: string;
   company_name?: string;
 }): Promise<Profile> {

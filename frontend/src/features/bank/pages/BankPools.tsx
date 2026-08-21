@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import BankShell from "../../components/BankShell";
+import BankShell from "../components/BankShell";
 import Card from "../../../components/ui/Card";
 import Badge from "../../../components/ui/Badge";
 import { fetchBankPools } from "../../../lib/services";
@@ -42,7 +42,9 @@ export default function BankPools() {
                   </div>
                   <div className="text-right">
                     <p className="tnum text-[16px] text-ink">{formatMoney(pool.total_amount, pool.currency)}</p>
-                    <Badge tone="muted" className="mt-1">{pool.status}</Badge>
+                    <div className="mt-1">
+                      <Badge tone="muted">{pool.status}</Badge>
+                    </div>
                   </div>
                 </div>
               </Card>

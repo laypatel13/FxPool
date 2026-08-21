@@ -1,8 +1,8 @@
 import { useEffect, useState, type FormEvent } from "react";
-import Modal from "../ui/Modal";
-import Input from "../ui/Input";
-import Select from "../ui/Select";
-import Button from "../ui/Button";
+import Modal from "../../../components/ui/Modal";
+import Input from "../../../components/ui/Input";
+import Select from "../../../components/ui/Select";
+import Button from "../../../components/ui/Button";
 import { SUPPORTED_CURRENCIES } from "../../../lib/constants";
 import { createInvoice, fetchIndicativeRate } from "../../../lib/services";
 import { formatRate } from "../../../lib/utils";

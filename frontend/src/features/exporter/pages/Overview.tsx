@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { FileText, ShieldCheck, Clock, Wallet, Plus, ArrowUpRight } from "lucide-react";
-import DashboardShell from "../../components/DashboardShell";
+import DashboardShell from "../components/DashboardShell";
 import StatCard from "../../../components/ui/StatCard";
 import Card from "../../../components/ui/Card";
 import Badge from "../../../components/ui/Badge";
 import Button from "../../../components/ui/Button";
 import Skeleton from "../../../components/ui/Skeleton";
-import UploadInvoiceModal from "../../components/UploadInvoiceModal";
+import UploadInvoiceModal from "../components/UploadInvoiceModal";
 import { fetchMyInvoices } from "../../../lib/services";
 import { INVOICE_STATUS_META } from "../../../lib/constants";
 import { formatMoney, formatDate, daysUntil } from "../../../lib/utils";

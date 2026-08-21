@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Search, Users } from "lucide-react";
-import AdminShell from "../../components/AdminShell";
+import AdminShell from "../components/AdminShell";
 import Card from "../../../components/ui/Card";
 import Skeleton from "../../../components/ui/Skeleton";
 import EmptyState from "../../../components/ui/EmptyState";

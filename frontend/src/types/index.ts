@@ -60,6 +60,9 @@ export interface Pool {
   settled_at?: string | null;
   risk_score?: number | null;
   compliance_status?: string | null;
+  bank_id?: string | null;
+  routing_confidence?: number | null;
+  routing_reasoning?: string | null;
   created_at: string;
 }
 

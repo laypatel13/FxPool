@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Layers } from "lucide-react";
-import DashboardShell from "../../components/DashboardShell";
+import DashboardShell from "../components/DashboardShell";
 import Card from "../../../components/ui/Card";
 import Badge from "../../../components/ui/Badge";
 import ProgressBar from "../../../components/ui/ProgressBar";

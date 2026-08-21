@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import AuthLayout from "../../components/AuthLayout";
+import AuthLayout from "../components/AuthLayout";
 import Input from "../../../components/ui/Input";
 import Button from "../../../components/ui/Button";
 import { useAuth } from "../../../hooks/useAuth";
@@ -19,6 +19,12 @@ const COPY: Record<Role, { title: string; subtitle: string; nameLabel: string; n
     subtitle: "Internal access for managing pools, invoices and exporters.",
     nameLabel: "Full name",
     namePlaceholder: "Admin name",
+  },
+  bank: {
+    title: "Create your bank account",
+    subtitle: "Access for banking partners to manage routed pools.",
+    nameLabel: "Bank User Name",
+    namePlaceholder: "Bank Admin",
   },
 };
 

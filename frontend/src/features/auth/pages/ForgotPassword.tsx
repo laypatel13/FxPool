@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { MailCheck } from "lucide-react";
-import AuthLayout from "../../components/AuthLayout";
+import AuthLayout from "../components/AuthLayout";
 import Input from "../../../components/ui/Input";
 import Button from "../../../components/ui/Button";
 import { supabase } from "../../../lib/supabase";

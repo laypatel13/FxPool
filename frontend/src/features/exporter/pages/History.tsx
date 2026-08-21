@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import DashboardShell from "../../components/DashboardShell";
+import DashboardShell from "../components/DashboardShell";
 import Card from "../../../components/ui/Card";
 import Badge from "../../../components/ui/Badge";
 import Skeleton from "../../../components/ui/Skeleton";

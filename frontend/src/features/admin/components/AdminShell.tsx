@@ -12,7 +12,7 @@ import {
   X,
   Building2,
 } from "lucide-react";
-import Logo from "../ui/Logo";
+import Logo from "../../../components/ui/Logo";
 import { cn, initials } from "../../../lib/utils";
 import { useAuth } from "../../../hooks/useAuth";
 

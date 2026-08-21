@@ -1,7 +1,7 @@
-import Card from "../ui/Card";
-import Badge from "../ui/Badge";
-import Button from "../ui/Button";
-import ProgressBar from "../ui/ProgressBar";
+import Card from "../../../components/ui/Card";
+import Badge from "../../../components/ui/Badge";
+import Button from "../../../components/ui/Button";
+import ProgressBar from "../../../components/ui/ProgressBar";
 
 const members = [
   { name: "Exporter A", amount: "$2,000", filled: true },

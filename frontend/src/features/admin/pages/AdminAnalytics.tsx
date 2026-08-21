@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import AdminShell from "../../components/AdminShell";
+import AdminShell from "../components/AdminShell";
 import Card from "../../../components/ui/Card";
 import Skeleton from "../../../components/ui/Skeleton";
 import EmptyState from "../../../components/ui/EmptyState";

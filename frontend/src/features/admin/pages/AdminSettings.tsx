@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import AdminShell from "../../components/AdminShell";
+import AdminShell from "../components/AdminShell";
 import Card from "../../../components/ui/Card";
 import Input from "../../../components/ui/Input";
 import Select from "../../../components/ui/Select";

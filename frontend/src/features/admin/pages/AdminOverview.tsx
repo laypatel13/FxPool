@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Users, Layers, FileSearch, CheckCircle2 } from "lucide-react";
-import AdminShell from "../../components/AdminShell";
+import AdminShell from "../components/AdminShell";
 import StatCard from "../../../components/ui/StatCard";
 import Card from "../../../components/ui/Card";
 import Badge from "../../../components/ui/Badge";

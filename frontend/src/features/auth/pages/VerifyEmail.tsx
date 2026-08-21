@@ -1,6 +1,6 @@
 import { useLocation, Link } from "react-router-dom";
 import { MailCheck } from "lucide-react";
-import AuthLayout from "../../components/AuthLayout";
+import AuthLayout from "../components/AuthLayout";
 import Button from "../../../components/ui/Button";
 
 export default function VerifyEmail() {

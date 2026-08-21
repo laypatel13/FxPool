@@ -1,11 +1,11 @@
 import { Link } from "react-router-dom";
 import { ShieldCheck, Layers, Building2, ArrowRight, Wallet, GitBranch, Landmark } from "lucide-react";
-import PublicNavbar from "../../components/PublicNavbar";
-import PublicFooter from "../../components/PublicFooter";
+import PublicNavbar from "../components/PublicNavbar";
+import PublicFooter from "../components/PublicFooter";
 import Card from "../../../components/ui/Card";
 import Button from "../../../components/ui/Button";
-import LedgerCard from "../../components/LedgerCard";
-import FaqItem from "../../components/FaqItem";
+import LedgerCard from "../components/LedgerCard";
+import FaqItem from "../components/FaqItem";
 
 const stats = [
   { value: "35%", label: "MSME exporters hedging today" },

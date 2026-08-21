@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { CalendarDays, Mail, Building2 } from "lucide-react";
-import PublicNavbar from "../../components/PublicNavbar";
-import PublicFooter from "../../components/PublicFooter";
+import PublicNavbar from "../components/PublicNavbar";
+import PublicFooter from "../components/PublicFooter";
 import Card from "../../../components/ui/Card";
 import Input from "../../../components/ui/Input";
 import Select from "../../../components/ui/Select";

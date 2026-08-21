@@ -1,6 +1,6 @@
 import { useRef, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import AuthLayout from "../../components/AuthLayout";
+import AuthLayout from "../components/AuthLayout";
 import Button from "../../../components/ui/Button";
 
 const LENGTH = 6;

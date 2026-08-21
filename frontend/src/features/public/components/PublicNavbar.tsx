@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { Menu, X } from "lucide-react";
-import Logo from "../ui/Logo";
-import Button from "../ui/Button";
+import Logo from "../../../components/ui/Logo";
+import Button from "../../../components/ui/Button";
 import { cn } from "../../../lib/utils";
 
 const links = [

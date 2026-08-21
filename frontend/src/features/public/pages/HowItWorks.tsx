@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import PublicNavbar from "../../components/PublicNavbar";
-import PublicFooter from "../../components/PublicFooter";
+import PublicNavbar from "../components/PublicNavbar";
+import PublicFooter from "../components/PublicFooter";
 import Card from "../../../components/ui/Card";
 import Button from "../../../components/ui/Button";
 import { cn } from "../../../lib/utils";
