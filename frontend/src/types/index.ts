@@ -22,6 +22,7 @@ export interface Invoice {
   indicative_rate?: number | null;
   status: InvoiceStatus;
   pool_id?: string | null;
+  document_url?: string | null;
   locked_rate?: number | null;
   payout_amount?: number | null;
   risk_score?: number | null;

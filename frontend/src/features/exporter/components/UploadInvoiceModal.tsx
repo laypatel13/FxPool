@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent, type ChangeEvent } from "react";
 import Modal from "../../../components/ui/Modal";
 import Input from "../../../components/ui/Input";
 import Select from "../../../components/ui/Select";
@@ -7,6 +7,7 @@ import { SUPPORTED_CURRENCIES } from "../../../lib/constants";
 import { createInvoice, fetchIndicativeRate } from "../../../lib/services";
 import { formatRate } from "../../../lib/utils";
 import type { Invoice } from "../../../types";
+import { supabase } from "../../../lib/supabase";
 
 interface UploadInvoiceModalProps {
   open: boolean;
@@ -18,6 +19,7 @@ export default function UploadInvoiceModal({ open, onClose, onCreated }: UploadI
   const [amount, setAmount] = useState("");
   const [currency, setCurrency] = useState<string>(SUPPORTED_CURRENCIES[0]);
   const [dueDate, setDueDate] = useState("");
+  const [file, setFile] = useState<File | null>(null);
   const [rate, setRate] = useState<number | null>(null);
   const [rateLoading, setRateLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -27,6 +29,7 @@ export default function UploadInvoiceModal({ open, onClose, onCreated }: UploadI
     if (!open) {
       setAmount("");
       setDueDate("");
+      setFile(null);
       setRate(null);
       setError("");
     }
@@ -47,6 +50,12 @@ export default function UploadInvoiceModal({ open, onClose, onCreated }: UploadI
     return () => clearTimeout(t);
   }, [currency, dueDate]);
 
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setFile(e.target.files[0]);
+    }
+  };
+
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
@@ -61,7 +70,36 @@ export default function UploadInvoiceModal({ open, onClose, onCreated }: UploadI
     }
     setSubmitting(true);
     try {
-      const invoice = await createInvoice({ amount: numericAmount, currency, due_date: dueDate });
+      let documentUrl: string | undefined;
+
+      // Upload file to Supabase Storage if selected
+      if (file && supabase) {
+        // Generate a random path
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${crypto.randomUUID()}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('invoices')
+          .upload(filePath, file);
+
+        if (uploadError) {
+          throw new Error("Failed to upload document: " + uploadError.message);
+        }
+
+        // Get public URL or just store the path (since the bucket isn't public, we'll store the path and generate signed URLs later or use createSignedUrl)
+        // Wait, if it's private, we should store the path and let the UI fetch it.
+        // Actually, Supabase has getPublicUrl, but if the bucket is private (as per our SQL: false), it needs createSignedUrl.
+        // For simplicity, we just save the filepath in the DB.
+        documentUrl = filePath;
+      }
+
+      const invoice = await createInvoice({ 
+        amount: numericAmount, 
+        currency, 
+        due_date: dueDate,
+        document_url: documentUrl
+      });
       onCreated(invoice);
       onClose();
     } catch (err) {
@@ -100,6 +138,22 @@ export default function UploadInvoiceModal({ open, onClose, onCreated }: UploadI
           value={dueDate}
           onChange={(e) => setDueDate(e.target.value)}
         />
+        
+        <div>
+          <label className="block text-[13px] font-medium text-ink mb-1.5">Invoice Document (PDF)</label>
+          <input
+            type="file"
+            accept="application/pdf"
+            onChange={handleFileChange}
+            className="block w-full text-[13px] text-ink-muted
+              file:mr-4 file:py-2 file:px-4
+              file:rounded-full file:border-0
+              file:text-[13px] file:font-semibold
+              file:bg-surface-2 file:text-ink
+              hover:file:bg-surface-3 transition-colors
+              cursor-pointer"
+          />
+        </div>
 
         <div className="rounded-xl border border-line bg-base/60 px-4 py-3.5">
           <p className="text-[11px] uppercase tracking-wide text-ink-faint">Indicative forward rate</p>
@@ -111,7 +165,7 @@ export default function UploadInvoiceModal({ open, onClose, onCreated }: UploadI
         {error && <p className="text-[12.5px] text-signal-down">{error}</p>}
 
         <Button type="submit" size="lg" className="w-full" disabled={submitting}>
-          {submitting ? "Running AI checks…" : "Submit invoice"}
+          {submitting ? "Processing…" : "Submit invoice"}
         </Button>
       </form>
     </Modal>

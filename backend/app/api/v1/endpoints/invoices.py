@@ -23,6 +23,7 @@ def create_invoice(body: InvoiceCreate, user: CurrentUser = Depends(require_expo
         "due_date": body.due_date.isoformat(),
         "indicative_rate": indicative_rate,
         "status": "pending_pool",
+        "document_url": body.document_url,
     }
     inserted = db.table("invoices").insert(row).execute()
     invoice = inserted.data[0]

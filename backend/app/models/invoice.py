@@ -9,6 +9,7 @@ class InvoiceCreate(BaseModel):
     amount: float = Field(gt=0)
     currency: str = Field(min_length=3, max_length=3)
     due_date: date
+    document_url: Optional[str] = None
 
 
 class InvoiceOut(BaseModel):
@@ -18,6 +19,7 @@ class InvoiceOut(BaseModel):
     amount: float
     currency: str
     due_date: date
+    document_url: Optional[str] = None
     indicative_rate: Optional[float] = None
     status: InvoiceStatus
     pool_id: Optional[str] = None

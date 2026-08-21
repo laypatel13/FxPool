@@ -1,4 +1,5 @@
 import api from "./api";
+import { supabase } from "./supabase";
 import type {
   AdminAnalyticsData,
   AdminOverviewStats,
@@ -56,6 +57,7 @@ export async function createInvoice(body: {
   amount: number;
   currency: string;
   due_date: string;
+  document_url?: string;
 }): Promise<Invoice> {
   const { data } = await api.post<Invoice>("/invoices", body);
   return data;
@@ -64,6 +66,13 @@ export async function createInvoice(body: {
 export async function fetchIndicativeRate(currency: string, dueDate: string) {
   const { data } = await api.get("/rate/indicative", { params: { currency, due_date: dueDate } });
   return data as { currency: string; due_date: string; indicative_rate: number };
+}
+
+export async function getInvoiceDocumentUrl(path: string): Promise<string> {
+  if (!supabase) throw new Error("Supabase client not initialized");
+  const { data, error } = await supabase.storage.from('invoices').createSignedUrl(path, 60 * 5); // 5 mins
+  if (error || !data) throw new Error(error?.message || "Failed to generate document link");
+  return data.signedUrl;
 }
 
 // ---- Pool marketplace (exporter-facing, read-only) — wired to /pools ------

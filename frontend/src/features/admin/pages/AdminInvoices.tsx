@@ -65,6 +65,7 @@ export default function AdminInvoices() {
                   <th className="px-6 py-3.5 font-normal">Amount</th>
                   <th className="px-6 py-3.5 font-normal">Due date</th>
                   <th className="px-6 py-3.5 font-normal">Pool</th>
+                  <th className="px-6 py-3.5 font-normal">Document</th>
                   <th className="px-6 py-3.5 font-normal">Status</th>
                 </tr>
               </thead>
@@ -76,6 +77,26 @@ export default function AdminInvoices() {
                     <td className="tnum px-6 py-3.5 text-ink">{formatMoney(inv.amount, inv.currency)}</td>
                     <td className="tnum px-6 py-3.5 text-ink-muted">{formatDate(inv.due_date)}</td>
                     <td className="tnum px-6 py-3.5 text-ink-muted">{inv.pool_id ?? "—"}</td>
+                    <td className="px-6 py-3.5">
+                      {inv.document_url ? (
+                        <button
+                          className="text-accent hover:underline text-[13px]"
+                          onClick={async () => {
+                            try {
+                              const { getInvoiceDocumentUrl } = await import("../../../lib/services");
+                              const url = await getInvoiceDocumentUrl(inv.document_url!);
+                              window.open(url, '_blank');
+                            } catch (err) {
+                              alert("Could not load document.");
+                            }
+                          }}
+                        >
+                          View ↗
+                        </button>
+                      ) : (
+                        <span className="text-ink-faint">—</span>
+                      )}
+                    </td>
                     <td className="px-6 py-3.5">
                       <Badge tone={INVOICE_STATUS_META[inv.status].tone}>{INVOICE_STATUS_META[inv.status].label}</Badge>
                     </td>

@@ -81,6 +81,27 @@ export default function InvoiceDetail() {
                     <p className="tnum mt-1 text-[14px] text-ink">{value}</p>
                   </div>
                 ))}
+                
+                {invoice.document_url && (
+                  <div className="rounded-xl border border-line bg-base/60 px-4 py-3">
+                    <p className="text-[11px] text-ink-faint">Document</p>
+                    <button 
+                      type="button"
+                      className="mt-1 text-[14px] text-accent hover:underline text-left"
+                      onClick={async () => {
+                        try {
+                          const { getInvoiceDocumentUrl } = await import("../../../lib/services");
+                          const url = await getInvoiceDocumentUrl(invoice.document_url!);
+                          window.open(url, '_blank');
+                        } catch (err) {
+                          alert("Could not load document.");
+                        }
+                      }}
+                    >
+                      View PDF ↗
+                    </button>
+                  </div>
+                )}
               </div>
 
               {!invoice.exporter_confirmed && invoice.status !== "settled" && invoice.status !== "locked" && (
