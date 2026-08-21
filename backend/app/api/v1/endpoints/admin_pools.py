@@ -46,6 +46,14 @@ def execute(pool_id: str, user=Depends(require_admin)):
     if pool["status"] not in ("collecting", "suggested"):
         raise HTTPException(400, f"Cannot execute a pool with status '{pool['status']}'")
 
+    # Enforce compliance and exporter confirmation
+    invoices = db.table("invoices").select("exporter_confirmed, compliance_status").eq("pool_id", pool_id).execute().data or []
+    for inv in invoices:
+        if inv.get("compliance_status") == "rejected":
+            raise HTTPException(400, "Cannot execute a pool containing rejected invoices.")
+        if not inv.get("exporter_confirmed"):
+            raise HTTPException(400, "Cannot execute a pool until all exporters have confirmed their invoices.")
+
     # Lock rate using the pool's mid-bucket date as the representative settlement date
     mid_date = date.fromisoformat(pool["bucket_end_date"])
     locked_rate = compute_indicative_forward_rate(pool["currency"], mid_date)

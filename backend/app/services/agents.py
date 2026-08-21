@@ -1,5 +1,6 @@
 import json
 import boto3
+from botocore.config import Config
 import logging
 from concurrent.futures import ThreadPoolExecutor
 from app.core.supabase import get_supabase
@@ -20,6 +21,7 @@ def _invoke_bedrock(system_prompt: str, user_prompt: str) -> dict:
             region_name=settings.aws_region or REGION,
             aws_access_key_id=settings.aws_access_key_id,
             aws_secret_access_key=settings.aws_secret_access_key,
+            config=Config(connect_timeout=5, read_timeout=15, retries={"max_attempts": 1}),
         )
         body = {
             "anthropic_version": "bedrock-2023-05-31",
@@ -66,7 +68,7 @@ def run_invoice_agent(invoice: dict) -> dict:
     
     # Fallback default
     if output.get("is_fallback"):
-        output = {"is_plausible": True, "reasoning": "Fallback due to LLM error", "confidence": 50.0}
+        output = {"is_plausible": True, "reasoning": "Fallback due to LLM error", "confidence": 50.0, "is_fallback": True}
 
     _log_agent_run(
         invoice_id=invoice.get("id"),
@@ -85,7 +87,7 @@ def run_compliance_agent(invoice: dict) -> dict:
     output = _invoke_bedrock(system, json.dumps(invoice))
     
     if output.get("is_fallback"):
-        output = {"compliance_status": "approved", "reasoning": "Fallback due to LLM error", "confidence": 50.0}
+        output = {"compliance_status": "not_checked", "reasoning": "Fallback due to LLM error", "confidence": 50.0, "is_fallback": True}
 
     _log_agent_run(
         invoice_id=invoice.get("id"),
@@ -103,7 +105,13 @@ def run_pooling_agent(invoice: dict) -> dict:
     # 1. Fetch candidate pools (status='collecting', same currency)
     db = get_supabase()
     res = db.table("pools").select("*").eq("status", "collecting").eq("currency", invoice["currency"]).execute()
-    candidate_pools = res.data
+    
+    # Filter candidate pools to ensure the invoice due date is within the pool's bucket
+    due_date = invoice["due_date"]
+    candidate_pools = [
+        p for p in res.data 
+        if p["bucket_start_date"] <= due_date <= p["bucket_end_date"]
+    ]
 
     input_data = {
         "invoice": invoice,
@@ -115,7 +123,7 @@ def run_pooling_agent(invoice: dict) -> dict:
     output = _invoke_bedrock(system, json.dumps(input_data))
 
     if output.get("is_fallback"):
-        output = {"action": "fallback", "pool_id": None, "reasoning": "Fallback", "confidence": 0}
+        output = {"action": "fallback", "pool_id": None, "reasoning": "Fallback", "confidence": 0, "is_fallback": True}
 
     # Execute the action via the deterministic service logic
     assigned_pool = None
@@ -147,7 +155,7 @@ def run_risk_agent(invoice: dict, pool: dict) -> dict:
     output = _invoke_bedrock(system, json.dumps(input_data))
 
     if output.get("is_fallback"):
-        output = {"risk_score": 25.0, "reasoning": "Fallback", "confidence": 50.0}
+        output = {"risk_score": None, "reasoning": "Fallback", "confidence": 50.0, "is_fallback": True}
 
     _log_agent_run(
         invoice_id=invoice.get("id"),

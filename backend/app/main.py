@@ -8,7 +8,7 @@ app = FastAPI(title="FxPool API", version="0.1.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # tighten to your frontend origin before deploying to production
+    allow_origins=["http://localhost:5173"],  # tightened for local/preview
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

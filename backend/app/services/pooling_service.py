@@ -104,6 +104,11 @@ def assign_to_existing_pool(invoice: dict, pool_id: str) -> dict:
         return None
     pool = pool_res.data[0]
 
+    # 2. Validate that the invoice's due date fits the pool's bucket
+    if not (pool["bucket_start_date"] <= invoice["due_date"] <= pool["bucket_end_date"]):
+        # Fall back to standard deterministic assignment
+        return assign_invoice_to_pool(invoice)
+
     settings = get_pool_settings(invoice["currency"])
     min_amount = settings.get("min_pool_amount") or 0
 

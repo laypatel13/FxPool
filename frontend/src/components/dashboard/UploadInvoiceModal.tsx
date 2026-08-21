@@ -111,7 +111,7 @@ export default function UploadInvoiceModal({ open, onClose, onCreated }: UploadI
         {error && <p className="text-[12.5px] text-signal-down">{error}</p>}
 
         <Button type="submit" size="lg" className="w-full" disabled={submitting}>
-          {submitting ? "Submitting…" : "Submit invoice"}
+          {submitting ? "Running AI checks…" : "Submit invoice"}
         </Button>
       </form>
     </Modal>
