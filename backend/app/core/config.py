@@ -14,8 +14,10 @@ class Settings(BaseSettings):
     aws_access_key_id: Optional[str] = None
     aws_secret_access_key: Optional[str] = None
     aws_region: Optional[str] = None
+    aws_bearer_token_bedrock: Optional[str] = None
 
     class Config:
+        extra = "ignore"
         env_file = ".env"
 
 

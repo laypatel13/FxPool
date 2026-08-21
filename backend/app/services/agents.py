@@ -9,7 +9,8 @@ from app.services.pooling_service import get_pool_settings, assign_invoice_to_po
 
 logger = logging.getLogger(__name__)
 
-MODEL_ID = "anthropic.claude-3-haiku-20240307-v1:0"
+# Update to best available model ID (Claude 3.5 Sonnet v2 via cross-region inference)
+MODEL_ID = "us.anthropic.claude-3-5-sonnet-20241022-v2:0"
 REGION = "us-east-1"
 
 
@@ -19,8 +20,6 @@ def _invoke_bedrock(system_prompt: str, user_prompt: str) -> dict:
         client = boto3.client(
             "bedrock-runtime",
             region_name=settings.aws_region or REGION,
-            aws_access_key_id=settings.aws_access_key_id,
-            aws_secret_access_key=settings.aws_secret_access_key,
             config=Config(connect_timeout=5, read_timeout=15, retries={"max_attempts": 1}),
         )
         body = {
