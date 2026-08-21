@@ -3,7 +3,7 @@ from app.api.deps import require_exporter, CurrentUser
 from app.core.supabase import get_supabase
 from app.models.invoice import InvoiceCreate, InvoiceOut
 from app.services.rate_service import compute_indicative_forward_rate
-from app.services.pooling_service import assign_invoice_to_pool
+from app.services.agents import run_agent_pipeline
 
 router = APIRouter(prefix="/invoices", tags=["invoices"])
 
@@ -27,7 +27,21 @@ def create_invoice(body: InvoiceCreate, user: CurrentUser = Depends(require_expo
     inserted = db.table("invoices").insert(row).execute()
     invoice = inserted.data[0]
 
-    assign_invoice_to_pool(invoice)
+    # 1. Run the AI pipeline (parallel validation -> pooling -> risk)
+    pipeline_result = run_agent_pipeline(invoice)
+    
+    # 2. Update the invoice row with AI-generated fields
+    db.table("invoices").update({
+        "risk_score": pipeline_result["risk_score"],
+        "compliance_status": pipeline_result["compliance_status"],
+        "agent_recommended_pool_id": pipeline_result["pool"]["id"] if pipeline_result["pool"] else None
+    }).eq("id", invoice["id"]).execute()
+    
+    # 3. Update the pool with the new risk_score
+    if pipeline_result["pool"]:
+        db.table("pools").update({
+            "risk_score": pipeline_result["risk_score"]
+        }).eq("id", pipeline_result["pool"]["id"]).execute()
 
     final = db.table("invoices").select("*").eq("id", invoice["id"]).single().execute()
     return final.data

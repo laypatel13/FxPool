@@ -92,3 +92,34 @@ def assign_invoice_to_pool(invoice: dict) -> dict:
 def _days(n: int):
     from datetime import timedelta
     return timedelta(days=n)
+
+
+def assign_to_existing_pool(invoice: dict, pool_id: str) -> dict:
+    """Agent-driven pool assignment bypasses bucket logic for an exact ID match."""
+    db = get_supabase()
+    
+    # 1. Fetch pool to check min_amount thresholds
+    pool_res = db.table("pools").select("*").eq("id", pool_id).execute()
+    if not pool_res.data:
+        return None
+    pool = pool_res.data[0]
+
+    settings = get_pool_settings(invoice["currency"])
+    min_amount = settings.get("min_pool_amount") or 0
+
+    new_total = float(pool["total_amount"]) + float(invoice["amount"])
+    new_status = "suggested" if new_total >= min_amount and pool["status"] == "collecting" else pool["status"]
+
+    updated = (
+        db.table("pools")
+        .update({"total_amount": new_total, "status": new_status})
+        .eq("id", pool["id"])
+        .execute()
+    )
+    pool = updated.data[0]
+
+    db.table("invoices").update(
+        {"pool_id": pool["id"], "status": "pooled"}
+    ).eq("id", invoice["id"]).execute()
+
+    return pool
