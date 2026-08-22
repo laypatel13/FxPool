@@ -20,6 +20,10 @@ An exporter submits an invoice → a **five-agent pipeline** validates it, check
 
 ## Architecture at a glance
 
+![FxPool architecture — FastAPI backend (routers + services), Supabase Postgres, AWS Bedrock, Supabase Auth, and the React client](architecture.png)
+
+The diagram above shows the system layout — backend routers/services, data persistence, the LLM integration, auth, and the two client surfaces. It's a snapshot of *structure*, not of the agent decision flow; for the actual invoice→pool pipeline, guardrails, and fallback behavior, see the sequence below and the full breakdown in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md):
+
 ```
 Exporter submits invoice
         │
@@ -54,8 +58,6 @@ Exporter submits invoice
           ▼
    Pool locked → settled (settlement_service.py)
 ```
-
-Full breakdown of each agent, its guardrail, and what happens when the LLM call fails or returns something untrustworthy: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ## What's real vs. what's mocked
 
