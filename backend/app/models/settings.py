@@ -1,8 +1,10 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional
 
 
 class PoolSettingsOut(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
     id: str
     currency: Optional[str] = None
     bucket_width_days: int

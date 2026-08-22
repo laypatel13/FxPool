@@ -8,6 +8,7 @@ class AdminOverviewOut(BaseModel):
     pending_approvals: int
     contracts_executed: int
     total_volume_hedged: float
+    total_banks: int = 0
 
 
 class MonthlyVolumePoint(BaseModel):

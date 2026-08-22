@@ -1,32 +1,35 @@
 import api from "./api";
-import { supabase } from "./supabase";
 import type {
   AdminAnalyticsData,
   AdminOverviewStats,
+  Bank,
+  BankOverview,
   ExporterSummary,
+  Invite,
   Invoice,
   Pool,
   PoolDetail,
   PoolSettings,
   Profile,
-  Bank,
-  BankCapacity,
-  BankQuote,
+  RecommendationPayload,
   Role,
-  Document,
 } from "../types";
-
-// ---- Profile — wired to /auth ---------------------------------------------
 
 export async function fetchMyProfile(): Promise<Profile> {
   const { data } = await api.get<Profile>("/auth/me");
   return data;
 }
 
+export async function validateInvite(code: string, role: string): Promise<boolean> {
+  const { data } = await api.post<{ ok: boolean }>("/auth/validate-invite", { code, role });
+  return data.ok;
+}
+
 export async function createProfile(body: {
   role: Role;
   full_name: string;
   company_name?: string;
+  invitation_code?: string;
 }): Promise<Profile> {
   const { data } = await api.post<Profile>("/auth/profile", body);
   return data;
@@ -36,8 +39,6 @@ export async function updateMyProfile(body: { full_name?: string; company_name?:
   const { data } = await api.patch<Profile>("/auth/me", body);
   return data;
 }
-
-// ---- Invoices — wired to /invoices -----------------------------------------
 
 export async function fetchMyInvoices(): Promise<Invoice[]> {
   const { data } = await api.get<Invoice[]>("/invoices");
@@ -49,70 +50,44 @@ export async function fetchInvoice(id: string): Promise<Invoice | undefined> {
   return data;
 }
 
+export async function fetchRecommendation(id: string): Promise<RecommendationPayload> {
+  const { data } = await api.get<RecommendationPayload>(`/invoices/${id}/recommendation`);
+  return data;
+}
+
 export async function confirmInvoice(id: string): Promise<Invoice> {
   const { data } = await api.post<Invoice>(`/invoices/${id}/confirm`);
   return data;
+}
+
+export async function participateInPool(invoiceId: string, poolId?: string) {
+  const { data } = await api.post(`/invoices/${invoiceId}/participate`, { pool_id: poolId ?? null });
+  return data as { invoice: Invoice; pool: Pool };
 }
 
 export async function createInvoice(body: {
   amount: number;
   currency: string;
   due_date: string;
-  document_url?: string;
+  invoice_number?: string;
+  buyer_name?: string;
+  buyer_country?: string;
+  payment_terms?: string;
+  document_text?: string;
 }): Promise<Invoice> {
   const { data } = await api.post<Invoice>("/invoices", body);
   return data;
 }
 
-export const documentApi = {
-  getDocumentsByEntity: async (entityType: "profile" | "invoice", entityId: string): Promise<Document[]> => {
-    const res = await api.get(`/documents/entity/${entityType}/${entityId}`);
-    return res.data;
-  },
-
-  uploadDocument: async (
-    entityType: "profile" | "invoice",
-    entityId: string,
-    category: string,
-    documentName: string,
-    fileUrl: string
-  ): Promise<Document> => {
-    const res = await api.post("/documents/", {
-      entity_type: entityType,
-      entity_id: entityId,
-      category,
-      document_name: documentName,
-      file_url: fileUrl,
-    });
-    return res.data;
-  },
-
-  verifyDocument: async (
-    documentId: string,
-    status: "verified" | "rejected",
-    rejectionReason?: string
-  ): Promise<Document> => {
-    const res = await api.patch(`/documents/${documentId}/verify`, {
-      status,
-      rejection_reason: rejectionReason,
-    });
-    return res.data;
-  },
-};
+export async function uploadInvoice(form: FormData): Promise<Invoice> {
+  const { data } = await api.post<Invoice>("/invoices/upload", form);
+  return data;
+}
 
 export async function fetchIndicativeRate(currency: string, dueDate: string) {
   const { data } = await api.get("/rate/indicative", { params: { currency, due_date: dueDate } });
   return data as { currency: string; due_date: string; indicative_rate: number };
 }
-
-export async function getInvoiceDocumentUrl(path: string): Promise<string> {
-  if (!supabase) throw new Error("Supabase client not initialized");
-  const { data, error } = await supabase.storage.from('invoices').createSignedUrl(path, 60 * 5); // 5 mins
-  if (error || !data) throw new Error(error?.message || "Failed to generate document link");
-  return data.signedUrl;
-}
-
-// ---- Pool marketplace (exporter-facing, read-only) — wired to /pools ------
 
 export async function fetchOpenPools(status?: string): Promise<Pool[]> {
   const { data } = await api.get<Pool[]>("/pools", { params: status ? { status } : {} });
@@ -128,8 +103,6 @@ export async function fetchOpenPoolSettings(): Promise<PoolSettings> {
   const { data } = await api.get<PoolSettings>("/pools/settings");
   return data;
 }
-
-// ---- Pools (admin-scoped) — wired to /admin/pools --------------------------
 
 export async function fetchPools(status?: string): Promise<Pool[]> {
   const { data } = await api.get<Pool[]>("/admin/pools", { params: status ? { status } : {} });
@@ -151,8 +124,6 @@ export async function settlePool(poolId: string): Promise<Pool> {
   return data;
 }
 
-// ---- Admin — invoices, settings, exporters ---------------------------------
-
 export async function fetchAllInvoices(status?: string): Promise<Invoice[]> {
   const { data } = await api.get<Invoice[]>("/admin/invoices", { params: status ? { status } : {} });
   return data;
@@ -173,8 +144,6 @@ export async function fetchExporters(): Promise<ExporterSummary[]> {
   return data;
 }
 
-// ---- Admin overview + analytics — wired to /admin/overview, /admin/analytics
-
 export async function fetchAdminOverviewStats(): Promise<AdminOverviewStats> {
   const { data } = await api.get<AdminOverviewStats>("/admin/overview");
   return data;
@@ -185,27 +154,51 @@ export async function fetchAdminAnalytics(): Promise<AdminAnalyticsData> {
   return data;
 }
 
-// ---- Admin Banks -----------------------------------------------------------
-
 export async function fetchBanks(): Promise<Bank[]> {
   const { data } = await api.get<Bank[]>("/admin/banks");
   return data;
 }
 
-export async function createBank(body: Partial<Bank>): Promise<Bank> {
+export async function createBank(body: { code: string; name: string; status?: string }): Promise<Bank> {
   const { data } = await api.post<Bank>("/admin/banks", body);
   return data;
 }
 
-export async function setBankCapacity(bankId: string, capacity: Partial<BankCapacity>): Promise<BankCapacity> {
-  const { data } = await api.put<BankCapacity>(`/admin/banks/${bankId}/capacity`, capacity);
+export async function verifyBank(id: string): Promise<Bank> {
+  const { data } = await api.post<Bank>(`/admin/banks/${id}/verify`);
   return data;
 }
 
-// ---- Bank Portal -----------------------------------------------------------
+export async function suspendBank(id: string): Promise<Bank> {
+  const { data } = await api.post<Bank>(`/admin/banks/${id}/suspend`);
+  return data;
+}
 
-export async function fetchBankPools(): Promise<Pool[]> {
-  const { data } = await api.get<Pool[]>("/bank/pools");
+export async function createAdminInvite(bankId: string, kind: "exporter" | "bank_user", code?: string): Promise<Invite> {
+  const { data } = await api.post<Invite>(`/admin/banks/${bankId}/invites`, { kind, code });
+  return data;
+}
+
+export async function fetchBankOverview(): Promise<BankOverview> {
+  const { data } = await api.get<BankOverview>("/bank/overview");
+  return data;
+}
+
+export async function fetchBankPools(status?: string): Promise<Pool[]> {
+  const { data } = await api.get<Pool[]>("/bank/pools", { params: status ? { status } : {} });
+  return data;
+}
+
+export async function createBankPool(body: {
+  name: string;
+  currency: string;
+  bucket_start_date: string;
+  bucket_end_date: string;
+  minimum_amount: number;
+  target_amount: number;
+  maximum_amount: number;
+}): Promise<Pool> {
+  const { data } = await api.post<Pool>("/bank/pools", body);
   return data;
 }
 
@@ -214,12 +207,42 @@ export async function fetchBankPoolDetail(poolId: string): Promise<PoolDetail> {
   return data;
 }
 
-export async function quoteBankPool(poolId: string, rate: number): Promise<BankQuote> {
-  const { data } = await api.post<BankQuote>(`/bank/pools/${poolId}/quote`, null, { params: { rate } });
+export async function startBankHedge(poolId: string): Promise<Pool> {
+  const { data } = await api.post<Pool>(`/bank/pools/${poolId}/hedge`);
   return data;
 }
 
-export async function confirmBankSettlement(poolId: string): Promise<Pool> {
-  const { data } = await api.post<Pool>(`/bank/pools/${poolId}/confirm-settlement`);
+export async function executeBankPool(poolId: string): Promise<Pool> {
+  const { data } = await api.post<Pool>(`/bank/pools/${poolId}/execute`);
+  return data;
+}
+
+export async function settleBankPool(poolId: string): Promise<Pool> {
+  const { data } = await api.post<Pool>(`/bank/pools/${poolId}/settle`);
+  return data;
+}
+
+export async function markPoolUnfilled(poolId: string): Promise<Pool> {
+  const { data } = await api.post<Pool>(`/bank/pools/${poolId}/unfilled`);
+  return data;
+}
+
+export async function fetchBankExporters(): Promise<ExporterSummary[]> {
+  const { data } = await api.get<ExporterSummary[]>("/bank/exporters");
+  return data;
+}
+
+export async function fetchBankInvoices(status?: string): Promise<Invoice[]> {
+  const { data } = await api.get<Invoice[]>("/bank/invoices", { params: status ? { status } : {} });
+  return data;
+}
+
+export async function fetchBankInvites(): Promise<Invite[]> {
+  const { data } = await api.get<Invite[]>("/bank/invites");
+  return data;
+}
+
+export async function createBankInvite(kind: "exporter" | "bank_user" = "exporter"): Promise<Invite> {
+  const { data } = await api.post<Invite>("/bank/invites", { kind });
   return data;
 }

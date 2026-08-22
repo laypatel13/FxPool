@@ -12,6 +12,9 @@ export const api = axios.create({
 // Every FastAPI route (see app/api/deps.py) expects the Supabase access
 // token as `Authorization: Bearer <token>` — attach it to every request.
 api.interceptors.request.use(async (config) => {
+  if (config.data instanceof FormData) {
+    delete config.headers["Content-Type"];
+  }
   if (!supabase) return config;
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
@@ -20,5 +23,19 @@ api.interceptors.request.use(async (config) => {
   }
   return config;
 });
+
+api.interceptors.response.use(
+  (res) => res,
+  (err) => {
+    const detail = err.response?.data?.detail;
+    if (typeof detail === "string") {
+      err.message = detail;
+    } else if (!err.response) {
+      err.message =
+        "Cannot reach the API. Confirm the backend is running at http://localhost:8000 and try again.";
+    }
+    return Promise.reject(err);
+  }
+);
 
 export default api;

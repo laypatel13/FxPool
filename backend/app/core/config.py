@@ -17,7 +17,6 @@ class Settings(BaseSettings):
     aws_bearer_token_bedrock: Optional[str] = None
 
     class Config:
-        extra = "ignore"
         env_file = ".env"
 
 

@@ -38,6 +38,12 @@ export function daysUntil(iso: string) {
   return Math.ceil(diff / (1000 * 60 * 60 * 24));
 }
 
+export function poolFillPct(total: number, target?: number | null, maximum?: number | null) {
+  const denom = target || maximum || 0;
+  if (!denom) return 0;
+  return Math.min(100, (total / denom) * 100);
+}
+
 export function initials(name: string) {
   return name
     .split(" ")

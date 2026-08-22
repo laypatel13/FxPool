@@ -1,5 +1,4 @@
-// Mirrors app/models/*.py in fxpool-backend so the frontend and API
-// never drift silently out of sync.
+// Mirrors app/models/*.py so the frontend and API stay aligned.
 
 export type Role = "exporter" | "admin" | "bank";
 
@@ -8,97 +7,139 @@ export interface Profile {
   role: Role;
   full_name: string;
   company_name?: string | null;
+  bank_id?: string | null;
 }
 
-export type InvoiceStatus = "pending_pool" | "pooled" | "locked" | "settled";
-
-export type DocumentEntityType = "profile" | "invoice";
-
-export type DocumentCategory = 
-  | "business_kyc"
-  | "individual_kyc"
-  | "commercial"
-  | "shipment"
-  | "service_export"
-  | "payment_proof"
-  | "hedging_proof"
-  | "other";
-
-export type DocumentStatus = "pending" | "verified" | "rejected";
-
-export interface Document {
+export interface Bank {
   id: string;
-  uploader_id: string;
-  entity_type: DocumentEntityType;
-  entity_id: string;
-  category: DocumentCategory;
-  document_name: string;
-  file_url: string;
-  status: DocumentStatus;
-  verified_at?: string;
-  verified_by?: string;
-  rejection_reason?: string;
+  code: string;
+  name: string;
+  status: "pending" | "active" | "suspended";
   created_at: string;
-  updated_at: string;
 }
+
+export interface BankOverview {
+  bank: Bank;
+  active_pools: number;
+  exporters: number;
+  pending_invoices: number;
+  total_pooled: number;
+  hedged_exposure: number;
+  open_exposure: number;
+}
+
+export interface Invite {
+  id: string;
+  bank_id: string;
+  code: string;
+  kind: "exporter" | "bank_user";
+  status: string;
+  created_at: string;
+}
+
+export type InvoiceStatus =
+  | "pending_pool"
+  | "recommended"
+  | "pooled"
+  | "pool_not_filled"
+  | "locked"
+  | "settled";
 
 export interface Invoice {
   id: string;
   exporter_id: string;
   exporter_name?: string | null;
+  bank_id?: string | null;
   amount: number;
   currency: string;
-  due_date: string; // ISO date
+  due_date: string;
+  invoice_number?: string | null;
+  issue_date?: string | null;
+  buyer_name?: string | null;
+  buyer_country?: string | null;
+  payment_terms?: string | null;
+  document_url?: string | null;
+  extracted_data?: Record<string, unknown> | null;
+  validation_status?: string | null;
   indicative_rate?: number | null;
   status: InvoiceStatus;
   pool_id?: string | null;
-  document_url?: string | null;
   locked_rate?: number | null;
   payout_amount?: number | null;
   risk_score?: number | null;
   compliance_status?: string | null;
   agent_recommended_pool_id?: string | null;
+  pool_match_status?: string | null;
+  match_score?: number | null;
+  match_reason?: string | null;
+  recommended_alternatives?: Array<{ pool_id: string; match_score?: number; reason?: string }> | null;
   exporter_confirmed?: boolean;
-  created_at: string; // ISO datetime
+  created_at: string;
 }
 
-export type AgentName = "invoice" | "risk" | "pooling" | "compliance" | "orchestrator";
+export type AgentName = "invoice" | "risk" | "pooling" | "compliance" | "orchestrator" | "document" | "matching";
 
 export interface AgentRun {
   id: string;
   invoice_id?: string | null;
   pool_id?: string | null;
   agent_name: AgentName;
-  input?: Record<string, any> | null;
-  output?: Record<string, any> | null;
+  input?: Record<string, unknown> | null;
+  output?: Record<string, unknown> | null;
   recommendation?: string | null;
   confidence?: number | null;
-  created_at: string; // ISO datetime
+  created_at: string;
 }
 
-export type PoolStatus = "collecting" | "suggested" | "locked" | "settled";
+export type PoolStatus =
+  | "draft"
+  | "collecting"
+  | "target_reached"
+  | "hedging"
+  | "hedged"
+  | "settled"
+  | "cancelled"
+  | "expired"
+  | "suggested"
+  | "locked";
 
 export interface Pool {
   id: string;
+  bank_id?: string | null;
+  name?: string | null;
   currency: string;
   bucket_start_date: string;
   bucket_end_date: string;
   bucket_width_days: number;
   status: PoolStatus;
   total_amount: number;
+  minimum_amount?: number | null;
+  target_amount?: number | null;
+  maximum_amount?: number | null;
+  eligible_exporter_ids?: string[] | null;
   locked_rate?: number | null;
   executed_at?: string | null;
   settled_at?: string | null;
   risk_score?: number | null;
   compliance_status?: string | null;
-  bank_id?: string | null;
-  routing_confidence?: number | null;
-  routing_reasoning?: string | null;
   created_at: string;
 }
 
 export interface PoolDetail extends Pool {
   invoices: Invoice[];
+}
+
+export interface RecommendationPayload {
+  invoice: Invoice;
+  eligible_pools: Pool[];
+  recommendation: {
+    recommended_pool_id?: string | null;
+    match_score?: number;
+    reason?: string;
+    alternatives?: Array<{ pool_id: string; match_score?: number; reason?: string }>;
+    source?: string;
+  };
+  bank?: { id: string; code?: string; name?: string } | null;
 }
 
 export interface PoolSettings {
@@ -114,8 +155,6 @@ export interface IndicativeRate {
   indicative_rate: number;
 }
 
-// UI-only aggregate — computed client-side from /invoices + /admin/pools,
-// there is no single backend endpoint for this yet.
 export interface ExposureSummary {
   totalInvoices: number;
   activeHedges: number;
@@ -124,13 +163,13 @@ export interface ExposureSummary {
   openExposureUsd: number;
 }
 
-// Mirrors app/models/admin.py — real aggregates, computed server-side.
 export interface AdminOverviewStats {
   total_exporters: number;
   active_pools: number;
   pending_approvals: number;
   contracts_executed: number;
   total_volume_hedged: number;
+  total_banks?: number;
 }
 
 export interface MonthlyVolumePoint {
@@ -154,36 +193,5 @@ export interface ExporterSummary {
   company_name?: string | null;
   invoice_count: number;
   total_volume: number;
-}
-
-export interface Bank {
-  id: string;
-  name: string;
-  code: string;
-  status: "active" | "inactive" | "suspended";
-  supported_currencies: string[];
-  api_endpoint?: string | null;
-  contact_email?: string | null;
-  contact_name?: string | null;
-  created_at: string;
-}
-
-export interface BankCapacity {
-  id: string;
-  bank_id: string;
-  currency: string;
-  max_exposure: number;
-  current_exposure: number;
-  min_pool_amount?: number | null;
-  updated_at: string;
-}
-
-export interface BankQuote {
-  id: string;
-  pool_id: string;
-  bank_id: string;
-  quoted_rate: number;
-  source: string;
-  valid_until?: string | null;
-  created_at: string;
+  status?: string;
 }
